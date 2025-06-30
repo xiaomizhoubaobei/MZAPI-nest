@@ -32,11 +32,9 @@ master:
             ccn: 10
             check_files: added.txt
             language: javascript
-            exclude: .lizard.yml
         - name: 检查修改文件圈复杂度
           image: tencentcom/cyclomatic-complexity:latest
           settings:
             ccn: 20
             check_files: changed.txt
             language: javascript
-            exclude: .lizard.yml

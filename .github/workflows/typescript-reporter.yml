@@ -43,7 +43,7 @@ jobs:
           project: code/tsconfig.json
           error_fail_threshold: 0
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.TOKEN }}
       
       - name: TypeScript 构建检查
         uses: gozala/typescript-error-reporter-action@v1.0.9
@@ -51,4 +51,4 @@ jobs:
           project: code/tsconfig.build.json
           error_fail_threshold: 0
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.TOKEN }}

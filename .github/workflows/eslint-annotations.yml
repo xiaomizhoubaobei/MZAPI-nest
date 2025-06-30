@@ -53,7 +53,7 @@ jobs:
         with:
           eslint-report: code/eslint_report.json
           typescript-log: code/typescript.log
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          github-token: ${{ secrets.TOKEN }}
           eslint-annotation-prefix: '🔍 ESLint:'
           typescript-annotation-prefix: '⚠️ TypeScript:'
           error-on-warn: false

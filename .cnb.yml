@@ -17,14 +17,6 @@ master:
         tags: cnb:arch:amd64
         cpus: 64
       stages:
-        - name: 代码评审
-          image: cnbcool/ai-review:latest
-          settings:
-            type: code-review
-    - runner:
-        tags: cnb:arch:amd64
-        cpus: 64
-      stages:
         - name: 获取变更文件列表
           image: alpine/git:latest
           commands:

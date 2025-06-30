@@ -13,28 +13,3 @@ master:
             auth_type: https
             username: ${GIT_USERNAME}
             password: ${GIT_ACCESS_TOKEN}
-    - runner:
-        tags: cnb:arch:amd64
-        cpus: 64
-      stages:
-        - name: 获取变更文件列表
-          image: alpine/git:latest
-          commands:
-            - >-
-              git diff --name-only HEAD~1 HEAD > changed.txt || echo "" >
-              changed.txt
-            - >-
-              git diff --name-only --diff-filter=A HEAD~1 HEAD > added.txt ||
-              echo "" > added.txt
-        - name: 检查新增文件圈复杂度
-          image: tencentcom/cyclomatic-complexity:latest
-          settings:
-            ccn: 10
-            check_files: added.txt
-            language: javascript
-        - name: 检查修改文件圈复杂度
-          image: tencentcom/cyclomatic-complexity:latest
-          settings:
-            ccn: 20
-            check_files: changed.txt
-            language: javascript

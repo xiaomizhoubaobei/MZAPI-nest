@@ -1,0 +1,55 @@
+name: TypeScript Report
+
+on:
+  pull_request:
+    branches: [ "master" ]
+    paths:
+      - 'code/**/*.ts'
+      - 'code/**/*.tsx'
+      - 'code/tsconfig*.json'
+      - 'code/package*.json'
+
+permissions:
+  contents: read
+  pull-requests: write
+  checks: write
+
+jobs:
+  typescript-report:
+    runs-on: ubuntu-latest
+    name: TypeScript Error Report
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: 获取变更的 TypeScript 文件
+        id: changed-typescript-files
+        uses: tj-actions/changed-files@v44
+        with:
+          base_sha: ${{ github.event.pull_request.base.sha }}
+          files: |
+            code/**/*.ts
+            code/**/*.tsx
+      
+      - name: 设置 Node.js
+        if: steps.changed-typescript-files.outputs.any_changed == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: 'code/package-lock.json'
+      
+      - name: 安装依赖
+        if: steps.changed-typescript-files.outputs.any_changed == 'true'
+        run: |
+          cd code
+          npm ci
+      
+      - name: TypeScript 错误报告
+        if: steps.changed-typescript-files.outputs.any_changed == 'true'
+        uses: fersilva16/ts-report-action@1.1.0
+        with:
+          project: code/tsconfig.json
+          files: ${{ steps.changed-typescript-files.outputs.all_changed_files }}

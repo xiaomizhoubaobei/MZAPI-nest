@@ -1,0 +1,56 @@
+name: Code Formatting Check
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'code/**/*.ts'
+      - 'code/**/*.js'
+      - 'code/**/*.tsx'
+      - 'code/**/*.jsx'
+      - 'code/**/*.json'
+  pull_request:
+    branches: [master]
+    paths:
+      - 'code/**/*.ts'
+      - 'code/**/*.js'
+      - 'code/**/*.tsx'
+      - 'code/**/*.jsx'
+      - 'code/**/*.json'
+
+jobs:
+  format_check:
+    runs-on: ubuntu-latest
+    name: Check Code Formatting
+    permissions:
+      contents: read
+      pull-requests: write
+      checks: write
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Check TypeScript/JavaScript formatting
+        uses: sane-fmt/action@master
+        with:
+          args: |
+            - --details=diff
+            - --color=always
+            - code/src
+          actions-logs: 'true'
+      
+      - name: Format check summary
+        if: failure()
+        run: |
+          echo "❌ Code formatting issues detected!"
+          echo "Please run 'sane-fmt code/src' locally to fix formatting issues."
+          echo "Or use your IDE's auto-format feature before committing."
+          exit 1
+      
+      - name: Format check success
+        if: success()
+        run: |
+          echo "✅ All files are properly formatted!"

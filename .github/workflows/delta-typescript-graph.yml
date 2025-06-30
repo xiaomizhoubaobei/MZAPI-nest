@@ -1,0 +1,40 @@
+name: Delta TypeScript Graph
+
+on:
+  pull_request:
+    branches: [ "master" ]
+
+# 设置 GITHUB_TOKEN 的权限以允许写入 pull-requests
+permissions:
+  pull-requests: write
+  contents: read
+
+jobs:
+  delta-typescript-graph-job:
+    runs-on: ubuntu-latest
+    name: Delta TypeScript Graph
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # 获取完整的 git 历史以便进行差异比较
+      
+      - name: 设置 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: 'code/package-lock.json'
+      
+      - name: 安装依赖
+        run: |
+          cd code
+          npm ci
+      
+      - name: 生成 TypeScript 依赖关系图
+        uses: ysk8hori/delta-typescript-graph-action@v1
+        with:
+          access-token: ${{ github.token }}
+          tsconfig: 'code/tsconfig.json'
+          max-size: 30
+          orientation: 'TB'

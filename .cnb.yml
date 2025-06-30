@@ -1,0 +1,45 @@
+master:
+  pull_request:
+    target_branches:
+      - master
+    runner:
+      tags: cnb:arch:amd64
+      cpus: 64
+    stages:
+        - name: AI代码评审
+          image: cnbcool/ai-review:latest
+          settings:
+            type: code-review
+            max_comments: 100
+        - name: 变更总结
+          image: cnbcool/ai-review:latest
+          settings:
+            type: diff-summary
+          exports:
+            summary: CHANGE_SUMMARY
+        - name: 获取变更文件列表
+          type: git:changeList
+          options:
+            changed: changed.txt
+            added: added.txt
+        - name: 检查新增文件圈复杂度
+          image: tencentcom/cyclomatic-complexity:latest
+          settings:
+            ccn: 10
+            check_files: added.txt
+            language: python
+        - name: 检查修改文件圈复杂度
+          image: tencentcom/cyclomatic-complexity:latest
+          settings:
+            ccn: 20
+            check_files: changed.txt
+            language: python
+        - name: sync to github
+          image: tencentcom/git-sync
+          imports:
+            - https://cnb.cool/XMZZUZHI/key/-/blob/main/Github.yml
+          settings:
+            target_url: https://github.com/xiaomizhoubaobei/MZAPI-nest.git
+            auth_type: https
+            username: ${GIT_USERNAME}
+            password: ${GIT_ACCESS_TOKEN}

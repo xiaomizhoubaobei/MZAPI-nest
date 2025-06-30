@@ -1,0 +1,577 @@
+# 帮助文档地址: https://docs.cnb.cool/artifact/docker.html
+
+imports:
+  - https://cnb.cool/XMZZUZHI/key/-/blob/main/Github.yml
+  - https://cnb.cool/XMZZUZHI/key/-/blob/main/docker.yml
+
+master:
+  push:
+    - runner:
+        tags: cnb:arch:amd64
+        cpus: 64
+      services:
+        - docker
+      env:
+        IMAGE_TAG: ${CNB_DOCKER_REGISTRY}/${CNB_REPO_SLUG_LOWERCASE}:v.${CNB_BUILD_NUMBER}.0.0-linux-amd64
+      stages:
+        - name: build start notification
+          script: |
+            echo "🚀 CNB AMD64 构建开始于: $(date '+%Y-%m-%d %H:%M:%S')"
+            echo "BUILD_START_TIME=$(date +%s)" > /tmp/build_time.env
+        - name: docker login
+          script: >-
+            docker login -u ${CNB_TOKEN_USER_NAME} -p "${CNB_TOKEN}"
+            ${CNB_DOCKER_REGISTRY}
+        - name: docker build
+          script: |
+            echo "📦 开始构建镜像: ${IMAGE_TAG}"
+            docker build -t ${IMAGE_TAG} .
+            echo "✅ 镜像构建完成"
+        - name: image size check
+          script: |
+            IMAGE_SIZE=$(docker images ${IMAGE_TAG} --format "table {{.Size}}" | tail -1)
+            echo "📊 镜像大小: ${IMAGE_SIZE}"
+            echo "IMAGE_SIZE=${IMAGE_SIZE}" >> /tmp/build_time.env
+        - name: docker push
+          script: |
+            echo "🚀 开始推送镜像到 CNB Registry"
+            if docker push ${IMAGE_TAG}; then
+              echo "✅ CNB AMD64 镜像推送成功!"
+              echo "PUSH_STATUS=SUCCESS" >> /tmp/build_time.env
+            else
+              echo "❌ CNB AMD64 镜像推送失败!"
+              echo "PUSH_STATUS=FAILED" >> /tmp/build_time.env
+              exit 1
+            fi
+        - name: build completion notification
+          script: |
+            source /tmp/build_time.env
+            BUILD_END_TIME=$(date +%s)
+            BUILD_DURATION=$((BUILD_END_TIME - BUILD_START_TIME))
+            
+            # 格式化构建时间
+            HOURS=$((BUILD_DURATION / 3600))
+            MINUTES=$(((BUILD_DURATION % 3600) / 60))
+            SECONDS=$((BUILD_DURATION % 60))
+            
+            if [ $HOURS -gt 0 ]; then
+              FORMATTED_DURATION="${HOURS}小时${MINUTES}分${SECONDS}秒"
+            elif [ $MINUTES -gt 0 ]; then
+              FORMATTED_DURATION="${MINUTES}分${SECONDS}秒"
+            else
+              FORMATTED_DURATION="${SECONDS}秒"
+            fi
+            
+            # 获取镜像详细信息
+            IMAGE_ID=$(docker images ${IMAGE_TAG} --format "{{.ID}}" | head -1)
+            IMAGE_CREATED=$(docker images ${IMAGE_TAG} --format "{{.CreatedSince}}" | head -1)
+            
+            # 输出构建报告
+            echo "="*60
+            echo "🎉 CNB AMD64 构建完成报告"
+            echo "="*60
+            echo "📅 完成时间: $(date '+%Y-%m-%d %H:%M:%S')"
+            echo "⏱️  构建耗时: ${FORMATTED_DURATION}"
+            echo "📊 镜像大小: ${IMAGE_SIZE}"
+            echo "🏷️  镜像标签: ${IMAGE_TAG}"
+            echo "🆔 镜像ID: ${IMAGE_ID}"
+            echo "📋 推送状态: ${PUSH_STATUS}"
+            echo "🏗️  构建编号: ${CNB_BUILD_NUMBER:-N/A}"
+            echo "🌐 仓库地址: ${CNB_DOCKER_REGISTRY}/${CNB_REPO_SLUG_LOWERCASE}"
+            echo "="*60
+            
+            # 性能统计
+            if [ "$PUSH_STATUS" = "SUCCESS" ]; then
+              echo "✅ 构建和推送全部成功完成!"
+              # 计算构建效率（MB/秒）
+              if [[ "$IMAGE_SIZE" =~ ([0-9.]+)([KMGT]?B) ]]; then
+                SIZE_NUM=${BASH_REMATCH[1]}
+                SIZE_UNIT=${BASH_REMATCH[2]}
+                # 转换为整数计算（以KB为单位避免浮点数）
+                case $SIZE_UNIT in
+                  "GB") SIZE_KB=$((${SIZE_NUM%.*} * 1024 * 1024)) ;;
+                  "MB") SIZE_KB=$((${SIZE_NUM%.*} * 1024)) ;;
+                  "KB") SIZE_KB=${SIZE_NUM%.*} ;;
+                  *) SIZE_KB=0 ;;
+                esac
+                if [ $BUILD_DURATION -gt 0 ] && [ $SIZE_KB -gt 0 ]; then
+                  # 计算效率（KB/秒），然后转换为MB/秒显示
+                  EFFICIENCY_KB=$((SIZE_KB / BUILD_DURATION))
+                  EFFICIENCY_MB=$((EFFICIENCY_KB / 1024))
+                  echo "⚡ 构建效率: ${EFFICIENCY_MB} MB/秒"
+                fi
+              fi
+            else
+              echo "❌ 构建或推送过程中出现错误，请检查日志!"
+              exit 1
+            fi
+        - name: resolve
+          type: cnb:resolve
+          options:
+            key: build-amd64
+
+    - runner:
+        tags: cnb:arch:arm64:v8
+        cpus: 64
+      services:
+        - docker
+      env:
+        IMAGE_TAG: ${CNB_DOCKER_REGISTRY}/${CNB_REPO_SLUG_LOWERCASE}:v.${CNB_BUILD_NUMBER}.0.0-linux-arm64
+      stages:
+        - name: build start notification
+          script: |
+            echo "🚀 CNB ARM64 构建开始于: $(date '+%Y-%m-%d %H:%M:%S')"
+            echo "BUILD_START_TIME=$(date +%s)" > /tmp/build_time.env
+        - name: docker login
+          script: >-
+            docker login -u ${CNB_TOKEN_USER_NAME} -p "${CNB_TOKEN}"
+            ${CNB_DOCKER_REGISTRY}
+        - name: docker build
+          script: |
+            echo "📦 开始构建镜像: ${IMAGE_TAG}"
+            docker build -t ${IMAGE_TAG} .
+            echo "✅ 镜像构建完成"
+        - name: image size check
+          script: |
+            IMAGE_SIZE=$(docker images ${IMAGE_TAG} --format "table {{.Size}}" | tail -1)
+            echo "📊 镜像大小: ${IMAGE_SIZE}"
+            echo "IMAGE_SIZE=${IMAGE_SIZE}" >> /tmp/build_time.env
+        - name: docker push
+          script: |
+            echo "🚀 开始推送镜像到 CNB Registry"
+            if docker push ${IMAGE_TAG}; then
+              echo "✅ CNB ARM64 镜像推送成功!"
+              echo "PUSH_STATUS=SUCCESS" >> /tmp/build_time.env
+            else
+              echo "❌ CNB ARM64 镜像推送失败!"
+              echo "PUSH_STATUS=FAILED" >> /tmp/build_time.env
+              exit 1
+            fi
+        - name: build completion notification
+          script: |
+            source /tmp/build_time.env
+            BUILD_END_TIME=$(date +%s)
+            BUILD_DURATION=$((BUILD_END_TIME - BUILD_START_TIME))
+            echo "🎉 CNB ARM64 构建完成于: $(date '+%Y-%m-%d %H:%M:%S')"
+            echo "⏱️  总构建时间: ${BUILD_DURATION}秒"
+            echo "📊 镜像大小: ${IMAGE_SIZE}"
+            echo "📋 推送状态: ${PUSH_STATUS}"
+        - name: resolve
+          type: cnb:resolve
+          options:
+            key: build-arm64
+
+    # CNB manifest合并已移除，镜像将分别推送为独立的架构标签
+
+    # 华为云SWR推送配置
+    - runner:
+        tags: cnb:arch:amd64
+        cpus: 64
+      services:
+        - docker
+      env:
+        SWR_IMAGE_TAG: swr.ap-southeast-3.myhuaweicloud.com/xmz/mzapi:v.${CNB_BUILD_NUMBER}.0.0-linux-amd64
+      stages:
+        - name: swr build start notification
+          script: |
+            echo "🚀 华为云SWR AMD64 构建开始于: $(date '+%Y-%m-%d %H:%M:%S')"
+            echo "BUILD_START_TIME=$(date +%s)" > /tmp/swr_build_time.env
+        - name: huawei swr docker login
+          script: |
+            echo "Verifying SWR credentials..."
+            echo "SWR Username: ${SWR_USERNAME}"
+            echo "SWR Password length: ${#SWR_PASSWORD}"
+            docker login swr.ap-southeast-3.myhuaweicloud.com --username "${SWR_USERNAME}" --password "${SWR_PASSWORD}"
+          imports:
+            - https://cnb.cool/XMZZUZHI/key/-/blob/main/docker.yml
+        - name: huawei swr docker build
+          script: |
+            echo "📦 开始构建华为云SWR镜像: ${SWR_IMAGE_TAG}"
+            docker build -t ${SWR_IMAGE_TAG} .
+            echo "✅ 华为云SWR镜像构建完成"
+        - name: swr image size check
+          script: |
+            IMAGE_SIZE=$(docker images ${SWR_IMAGE_TAG} --format "table {{.Size}}" | tail -1)
+            echo "📊 华为云SWR镜像大小: ${IMAGE_SIZE}"
+            echo "IMAGE_SIZE=${IMAGE_SIZE}" >> /tmp/swr_build_time.env
+        - name: huawei swr docker push
+          script: |
+            echo "🚀 开始推送镜像到华为云SWR"
+            if docker push ${SWR_IMAGE_TAG}; then
+              echo "✅ 华为云SWR AMD64 镜像推送成功!"
+              echo "PUSH_STATUS=SUCCESS" >> /tmp/swr_build_time.env
+            else
+              echo "❌ 华为云SWR AMD64 镜像推送失败!"
+              echo "PUSH_STATUS=FAILED" >> /tmp/swr_build_time.env
+              exit 1
+            fi
+        - name: swr build completion notification
+          script: |
+            source /tmp/swr_build_time.env
+            BUILD_END_TIME=$(date +%s)
+            BUILD_DURATION=$((BUILD_END_TIME - BUILD_START_TIME))
+            
+            # 格式化构建时间显示
+            if [ $BUILD_DURATION -ge 3600 ]; then
+              HOURS=$((BUILD_DURATION / 3600))
+              MINUTES=$(((BUILD_DURATION % 3600) / 60))
+              SECONDS=$((BUILD_DURATION % 60))
+              FORMATTED_TIME="${HOURS}小时${MINUTES}分${SECONDS}秒"
+            elif [ $BUILD_DURATION -ge 60 ]; then
+              MINUTES=$((BUILD_DURATION / 60))
+              SECONDS=$((BUILD_DURATION % 60))
+              FORMATTED_TIME="${MINUTES}分${SECONDS}秒"
+            else
+              FORMATTED_TIME="${BUILD_DURATION}秒"
+            fi
+            
+            # 获取镜像详细信息
+            IMAGE_ID=$(docker images ${SWR_IMAGE_TAG} --format "{{.ID}}" | head -1)
+            IMAGE_CREATED=$(docker images ${SWR_IMAGE_TAG} --format "{{.CreatedAt}}" | head -1)
+            
+            # 输出详细构建报告
+            echo "============================================================"
+            echo "🎉 华为云SWR AMD64 构建完成报告"
+            echo "============================================================"
+            echo "📅 完成时间: $(date '+%Y-%m-%d %H:%M:%S')"
+            echo "⏱️  构建耗时: ${FORMATTED_TIME}"
+            echo "📊 镜像大小: ${IMAGE_SIZE}"
+            echo "🏷️  镜像标签: ${SWR_IMAGE_TAG}"
+            echo "🆔 镜像ID: ${IMAGE_ID}"
+            echo "📋 推送状态: ${PUSH_STATUS}"
+            echo "🏗️  构建编号: ${CNB_BUILD_NUMBER}"
+            echo "🌐 仓库地址: swr.ap-southeast-3.myhuaweicloud.com/xmz/mzapi"
+            echo "============================================================"
+            
+            # 根据推送状态显示结果
+            if [ "${PUSH_STATUS}" = "SUCCESS" ]; then
+              echo "✅ 构建和推送全部成功完成!"
+              # 计算构建效率（如果有镜像大小信息）
+              if [[ "${IMAGE_SIZE}" =~ ([0-9.]+)([KMGT]?B) ]]; then
+                SIZE_NUM=${BASH_REMATCH[1]}
+                SIZE_UNIT=${BASH_REMATCH[2]}
+                # 转换为整数计算（以KB为单位避免浮点数）
+                case $SIZE_UNIT in
+                  "GB") SIZE_KB=$((${SIZE_NUM%.*} * 1024 * 1024)) ;;
+                  "MB") SIZE_KB=$((${SIZE_NUM%.*} * 1024)) ;;
+                  "KB") SIZE_KB=${SIZE_NUM%.*} ;;
+                  "B") SIZE_KB=$((${SIZE_NUM%.*} / 1024)) ;;
+                  *) SIZE_KB=0 ;;
+                esac
+                if [ $BUILD_DURATION -gt 0 ] && [ $SIZE_KB -gt 0 ]; then
+                  # 计算效率（KB/秒），然后转换为MB/秒显示
+                  EFFICIENCY_KB=$((SIZE_KB / BUILD_DURATION))
+                  EFFICIENCY_MB=$((EFFICIENCY_KB / 1024))
+                  echo "⚡ 构建效率: ${EFFICIENCY_MB} MB/秒"
+                fi
+              fi
+            else
+              echo "❌ 构建或推送过程中出现错误!"
+              exit 1
+            fi
+        - name: resolve
+          type: cnb:resolve
+          options:
+            key: swr-build-amd64
+
+    - runner:
+        tags: cnb:arch:arm64:v8
+        cpus: 64
+      services:
+        - docker
+      env:
+        SWR_IMAGE_TAG: swr.ap-southeast-3.myhuaweicloud.com/xmz/mzapi:v.${CNB_BUILD_NUMBER}.0.0-linux-arm64
+      stages:
+        - name: swr build start notification
+          script: |
+            echo "🚀 华为云SWR ARM64 构建开始于: $(date '+%Y-%m-%d %H:%M:%S')"
+            echo "BUILD_START_TIME=$(date +%s)" > /tmp/swr_build_time.env
+        - name: huawei swr docker login
+          script: |
+            echo "Verifying SWR credentials..."
+            echo "SWR Username: ${SWR_USERNAME}"
+            echo "SWR Password length: ${#SWR_PASSWORD}"
+            docker login swr.ap-southeast-3.myhuaweicloud.com --username "${SWR_USERNAME}" --password "${SWR_PASSWORD}"
+          imports:
+            - https://cnb.cool/XMZZUZHI/key/-/blob/main/docker.yml
+        - name: huawei swr docker build
+          script: |
+            echo "📦 开始构建华为云SWR镜像: ${SWR_IMAGE_TAG}"
+            docker build -t ${SWR_IMAGE_TAG} .
+            echo "✅ 华为云SWR镜像构建完成"
+        - name: swr image size check
+          script: |
+            IMAGE_SIZE=$(docker images ${SWR_IMAGE_TAG} --format "table {{.Size}}" | tail -1)
+            echo "📊 华为云SWR镜像大小: ${IMAGE_SIZE}"
+            echo "IMAGE_SIZE=${IMAGE_SIZE}" >> /tmp/swr_build_time.env
+        - name: huawei swr docker push
+          script: |
+            echo "🚀 开始推送镜像到华为云SWR"
+            if docker push ${SWR_IMAGE_TAG}; then
+              echo "✅ 华为云SWR ARM64 镜像推送成功!"
+              echo "PUSH_STATUS=SUCCESS" >> /tmp/swr_build_time.env
+            else
+              echo "❌ 华为云SWR ARM64 镜像推送失败!"
+              echo "PUSH_STATUS=FAILED" >> /tmp/swr_build_time.env
+              exit 1
+            fi
+        - name: swr build completion notification
+          script: |
+            source /tmp/swr_build_time.env
+            BUILD_END_TIME=$(date +%s)
+            BUILD_DURATION=$((BUILD_END_TIME - BUILD_START_TIME))
+            echo "🎉 华为云SWR ARM64 构建完成于: $(date '+%Y-%m-%d %H:%M:%S')"
+            echo "⏱️  总构建时间: ${BUILD_DURATION}秒"
+            echo "📊 镜像大小: ${IMAGE_SIZE}"
+            echo "📋 推送状态: ${PUSH_STATUS}"
+        - name: resolve
+          type: cnb:resolve
+          options:
+            key: swr-build-arm64
+
+    # 华为云SWR manifest合并已移除，镜像将分别推送为独立的架构标签
+
+    # Github代码同步配置
+    - runner:
+        tags: cnb:arch:amd64
+        cpus: 64
+      stages:
+        - name: sync to github
+          image: tencentcom/git-sync
+          imports:
+            - https://cnb.cool/XMZZUZHI/key/-/blob/main/Github.yml
+          settings:
+            target_url: https://github.com/xiaomizhoubaobei/aliyun-MZAPI.git
+            auth_type: https
+            username: ${GIT_USERNAME}
+            password: ${GIT_ACCESS_TOKEN}
+
+    # 阿里云Container Registry推送配置
+    - runner:
+        tags: cnb:arch:amd64
+        cpus: 64
+      services:
+        - docker
+      env:
+        ALIYUN_IMAGE_TAG: crpi-wk2d8umombj539de.cn-shanghai.personal.cr.aliyuncs.com/xmz-1/mzapi:v.${CNB_BUILD_NUMBER}.0.0-linux-amd64
+      stages:
+        - name: aliyun build start notification
+          script: |
+            echo "🚀 阿里云ACR AMD64 构建开始于: $(date '+%Y-%m-%d %H:%M:%S')"
+            echo "BUILD_START_TIME=$(date +%s)" > /tmp/aliyun_build_time.env
+        - name: aliyun acr docker login
+          script: |
+            echo "Verifying Aliyun ACR credentials..."
+            echo "Aliyun Username: ${ALIYUN_USERNAME}"
+            echo "Aliyun Password length: ${#ALIYUN_PASSWORD}"
+            docker login --username="${ALIYUN_USERNAME}" --password="${ALIYUN_PASSWORD}" crpi-wk2d8umombj539de.cn-shanghai.personal.cr.aliyuncs.com
+          imports:
+            - https://cnb.cool/XMZZUZHI/key/-/blob/main/docker.yml
+        - name: aliyun acr docker build
+          script: |
+            echo "📦 开始构建阿里云ACR镜像: ${ALIYUN_IMAGE_TAG}"
+            docker build -t ${ALIYUN_IMAGE_TAG} .
+            echo "✅ 阿里云ACR镜像构建完成"
+        - name: aliyun image size check
+          script: |
+            IMAGE_SIZE=$(docker images ${ALIYUN_IMAGE_TAG} --format "table {{.Size}}" | tail -1)
+            echo "📊 阿里云ACR镜像大小: ${IMAGE_SIZE}"
+            echo "IMAGE_SIZE=${IMAGE_SIZE}" >> /tmp/aliyun_build_time.env
+        - name: aliyun acr docker push
+          script: |
+            echo "🚀 开始推送镜像到阿里云ACR"
+            if docker push ${ALIYUN_IMAGE_TAG}; then
+              echo "✅ 阿里云ACR AMD64 镜像推送成功!"
+              echo "PUSH_STATUS=SUCCESS" >> /tmp/aliyun_build_time.env
+            else
+              echo "❌ 阿里云ACR AMD64 镜像推送失败!"
+              echo "PUSH_STATUS=FAILED" >> /tmp/aliyun_build_time.env
+              exit 1
+            fi
+        - name: aliyun build completion notification
+          script: |
+            source /tmp/aliyun_build_time.env
+            BUILD_END_TIME=$(date +%s)
+            BUILD_DURATION=$((BUILD_END_TIME - BUILD_START_TIME))
+            echo "🎉 阿里云ACR AMD64 构建完成于: $(date '+%Y-%m-%d %H:%M:%S')"
+            echo "⏱️  总构建时间: ${BUILD_DURATION}秒"
+            echo "📊 镜像大小: ${IMAGE_SIZE}"
+            echo "📋 推送状态: ${PUSH_STATUS}"
+        - name: resolve
+          type: cnb:resolve
+          options:
+            key: aliyun-build-amd64
+
+    - runner:
+        tags: cnb:arch:arm64:v8
+        cpus: 64
+      services:
+        - docker
+      env:
+        ALIYUN_IMAGE_TAG: crpi-wk2d8umombj539de.cn-shanghai.personal.cr.aliyuncs.com/xmz-1/mzapi:v.${CNB_BUILD_NUMBER}.0.0-linux-arm64
+      stages:
+        - name: aliyun build start notification
+          script: |
+            echo "🚀 阿里云ACR ARM64 构建开始于: $(date '+%Y-%m-%d %H:%M:%S')"
+            echo "BUILD_START_TIME=$(date +%s)" > /tmp/aliyun_build_time.env
+        - name: aliyun acr docker login
+          script: |
+            echo "Verifying Aliyun ACR credentials..."
+            echo "Aliyun Username: ${ALIYUN_USERNAME}"
+            echo "Aliyun Password length: ${#ALIYUN_PASSWORD}"
+            docker login --username="${ALIYUN_USERNAME}" --password="${ALIYUN_PASSWORD}" crpi-wk2d8umombj539de.cn-shanghai.personal.cr.aliyuncs.com
+          imports:
+            - https://cnb.cool/XMZZUZHI/key/-/blob/main/docker.yml
+        - name: aliyun acr docker build
+          script: |
+            echo "📦 开始构建阿里云ACR镜像: ${ALIYUN_IMAGE_TAG}"
+            docker build -t ${ALIYUN_IMAGE_TAG} .
+            echo "✅ 阿里云ACR镜像构建完成"
+        - name: aliyun image size check
+          script: |
+            IMAGE_SIZE=$(docker images ${ALIYUN_IMAGE_TAG} --format "table {{.Size}}" | tail -1)
+            echo "📊 阿里云ACR镜像大小: ${IMAGE_SIZE}"
+            echo "IMAGE_SIZE=${IMAGE_SIZE}" >> /tmp/aliyun_build_time.env
+        - name: aliyun acr docker push
+          script: |
+            echo "🚀 开始推送镜像到阿里云ACR"
+            if docker push ${ALIYUN_IMAGE_TAG}; then
+              echo "✅ 阿里云ACR ARM64 镜像推送成功!"
+              echo "PUSH_STATUS=SUCCESS" >> /tmp/aliyun_build_time.env
+            else
+              echo "❌ 阿里云ACR ARM64 镜像推送失败!"
+              echo "PUSH_STATUS=FAILED" >> /tmp/aliyun_build_time.env
+              exit 1
+            fi
+        - name: aliyun build completion notification
+          script: |
+            source /tmp/aliyun_build_time.env
+            BUILD_END_TIME=$(date +%s)
+            BUILD_DURATION=$((BUILD_END_TIME - BUILD_START_TIME))
+            echo "🎉 阿里云ACR ARM64 构建完成于: $(date '+%Y-%m-%d %H:%M:%S')"
+            echo "⏱️  总构建时间: ${BUILD_DURATION}秒"
+            echo "📊 镜像大小: ${IMAGE_SIZE}"
+            echo "📋 推送状态: ${PUSH_STATUS}"
+        - name: resolve
+          type: cnb:resolve
+          options:
+            key: aliyun-build-arm64
+
+    # 阿里云ACR manifest合并已移除，镜像将分别推送为独立的架构标签
+
+    # Docker Hub推送配置
+    - runner:
+        tags: cnb:arch:amd64
+        cpus: 64
+      services:
+        - docker
+      env:
+        DOCKERHUB_IMAGE_TAG: ${DOCKERHUB_USERNAME}/mzapi:v.${CNB_BUILD_NUMBER}.0.0-linux-amd64
+      imports:
+        - https://cnb.cool/XMZZUZHI/key/-/blob/main/docker.yml
+      stages:
+        - name: dockerhub build start notification
+          script: |
+            echo "🚀 Docker Hub AMD64 构建开始于: $(date '+%Y-%m-%d %H:%M:%S')"
+            echo "BUILD_START_TIME=$(date +%s)" > /tmp/dockerhub_build_time.env
+        - name: docker hub login
+          script: |
+            echo "Verifying Docker Hub credentials..."
+            echo "Docker Hub Username: ${DOCKERHUB_USERNAME}"
+            echo "Docker Hub Password length: ${#DOCKERHUB_PASSWORD}"
+            docker login -u "${DOCKERHUB_USERNAME}" -p "${DOCKERHUB_PASSWORD}"
+          imports:
+            - https://cnb.cool/XMZZUZHI/key/-/blob/main/docker.yml
+        - name: docker hub build
+          script: |
+            echo "📦 开始构建Docker Hub镜像: ${DOCKERHUB_IMAGE_TAG}"
+            docker build -t ${DOCKERHUB_IMAGE_TAG} .
+            echo "✅ Docker Hub镜像构建完成"
+        - name: dockerhub image size check
+          script: |
+            IMAGE_SIZE=$(docker images ${DOCKERHUB_IMAGE_TAG} --format "table {{.Size}}" | tail -1)
+            echo "📊 Docker Hub镜像大小: ${IMAGE_SIZE}"
+            echo "IMAGE_SIZE=${IMAGE_SIZE}" >> /tmp/dockerhub_build_time.env
+        - name: docker hub push
+          script: |
+            echo "🚀 开始推送镜像到Docker Hub"
+            if docker push ${DOCKERHUB_IMAGE_TAG}; then
+              echo "✅ Docker Hub AMD64 镜像推送成功!"
+              echo "PUSH_STATUS=SUCCESS" >> /tmp/dockerhub_build_time.env
+            else
+              echo "❌ Docker Hub AMD64 镜像推送失败!"
+              echo "PUSH_STATUS=FAILED" >> /tmp/dockerhub_build_time.env
+              exit 1
+            fi
+        - name: dockerhub build completion notification
+          script: |
+            source /tmp/dockerhub_build_time.env
+            BUILD_END_TIME=$(date +%s)
+            BUILD_DURATION=$((BUILD_END_TIME - BUILD_START_TIME))
+            echo "🎉 Docker Hub AMD64 构建完成于: $(date '+%Y-%m-%d %H:%M:%S')"
+            echo "⏱️  总构建时间: ${BUILD_DURATION}秒"
+            echo "📊 镜像大小: ${IMAGE_SIZE}"
+            echo "📋 推送状态: ${PUSH_STATUS}"
+        - name: resolve
+          type: cnb:resolve
+          options:
+            key: dockerhub-build-amd64
+
+    - runner:
+        tags: cnb:arch:arm64:v8
+        cpus: 64
+      services:
+        - docker
+      env:
+        DOCKERHUB_IMAGE_TAG: ${DOCKERHUB_USERNAME}/mzapi:v.${CNB_BUILD_NUMBER}.0.0-linux-arm64
+      imports:
+        - https://cnb.cool/XMZZUZHI/key/-/blob/main/docker.yml
+      stages:
+        - name: dockerhub build start notification
+          script: |
+            echo "🚀 Docker Hub ARM64 构建开始于: $(date '+%Y-%m-%d %H:%M:%S')"
+            echo "BUILD_START_TIME=$(date +%s)" > /tmp/dockerhub_build_time.env
+        - name: docker hub login
+          script: |
+            echo "Verifying Docker Hub credentials..."
+            echo "Docker Hub Username: ${DOCKERHUB_USERNAME}"
+            echo "Docker Hub Password length: ${#DOCKERHUB_PASSWORD}"
+            docker login -u "${DOCKERHUB_USERNAME}" -p "${DOCKERHUB_PASSWORD}"
+          imports:
+            - https://cnb.cool/XMZZUZHI/key/-/blob/main/docker.yml
+        - name: docker hub build
+          script: |
+            echo "📦 开始构建Docker Hub镜像: ${DOCKERHUB_IMAGE_TAG}"
+            docker build -t ${DOCKERHUB_IMAGE_TAG} .
+            echo "✅ Docker Hub镜像构建完成"
+        - name: dockerhub image size check
+          script: |
+            IMAGE_SIZE=$(docker images ${DOCKERHUB_IMAGE_TAG} --format "table {{.Size}}" | tail -1)
+            echo "📊 Docker Hub镜像大小: ${IMAGE_SIZE}"
+            echo "IMAGE_SIZE=${IMAGE_SIZE}" >> /tmp/dockerhub_build_time.env
+        - name: docker hub push
+          script: |
+            echo "🚀 开始推送镜像到Docker Hub"
+            if docker push ${DOCKERHUB_IMAGE_TAG}; then
+              echo "✅ Docker Hub ARM64 镜像推送成功!"
+              echo "PUSH_STATUS=SUCCESS" >> /tmp/dockerhub_build_time.env
+            else
+              echo "❌ Docker Hub ARM64 镜像推送失败!"
+              echo "PUSH_STATUS=FAILED" >> /tmp/dockerhub_build_time.env
+              exit 1
+            fi
+        - name: dockerhub build completion notification
+          script: |
+            source /tmp/dockerhub_build_time.env
+            BUILD_END_TIME=$(date +%s)
+            BUILD_DURATION=$((BUILD_END_TIME - BUILD_START_TIME))
+            echo "🎉 Docker Hub ARM64 构建完成于: $(date '+%Y-%m-%d %H:%M:%S')"
+            echo "⏱️  总构建时间: ${BUILD_DURATION}秒"
+            echo "📊 镜像大小: ${IMAGE_SIZE}"
+            echo "📋 推送状态: ${PUSH_STATUS}"
+        - name: resolve
+          type: cnb:resolve
+          options:
+            key: dockerhub-build-arm64
+
+    # Docker Hub manifest合并已移除，镜像将分别推送为独立的架构标签

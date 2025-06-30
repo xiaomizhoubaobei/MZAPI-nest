@@ -1,0 +1,73 @@
+name: ESLint Annotations
+
+on:
+  push:
+    branches: [ "master" ]
+    paths:
+      - 'code/**/*.ts'
+      - 'code/**/*.tsx'
+      - 'code/**/*.js'
+      - 'code/**/*.jsx'
+      - 'code/.eslintrc.js'
+      - 'code/package*.json'
+  pull_request:
+    branches: [ "master" ]
+    paths:
+      - 'code/**/*.ts'
+      - 'code/**/*.tsx'
+      - 'code/**/*.js'
+      - 'code/**/*.jsx'
+      - 'code/.eslintrc.js'
+      - 'code/package*.json'
+
+permissions:
+  contents: read
+  pull-requests: read
+  checks: write
+
+jobs:
+  eslint-annotations:
+    name: ESLint 注释和状态检查
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+      
+      - name: 设置 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: 'code/package-lock.json'
+      
+      - name: 安装依赖
+        run: |
+          cd code
+          npm ci
+      
+      - name: 运行 ESLint 并生成报告
+        run: |
+          cd code
+          npm run lint -- --output-file eslint_report.json --format json
+        continue-on-error: true
+      
+      - name: 运行 TypeScript 类型检查
+        run: |
+          cd code
+          npx tsc --noEmit > typescript.log 2>&1
+        continue-on-error: true
+      
+      - name: 添加代码注释
+        uses: DerLev/eslint-annotations@v2
+        with:
+          eslint-report: code/eslint_report.json
+          typescript-log: code/typescript.log
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          eslint-annotation-prefix: '🔍 ESLint:'
+          typescript-annotation-prefix: '⚠️ TypeScript:'
+          error-on-warn: false
+          create-status-check: true
+          status-check-name: 'ESLint & TypeScript 检查'
+          fail-in-pr: true
+          only-changed-in-pr: true
+          add-notice-with-url: true

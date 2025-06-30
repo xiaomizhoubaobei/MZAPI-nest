@@ -9,14 +9,6 @@ on:
       - 'code/**/*.tsx'
       - 'code/**/*.jsx'
       - 'code/**/*.json'
-  pull_request:
-    branches: [master]
-    paths:
-      - 'code/**/*.ts'
-      - 'code/**/*.js'
-      - 'code/**/*.tsx'
-      - 'code/**/*.jsx'
-      - 'code/**/*.json'
 
 jobs:
   format_check:

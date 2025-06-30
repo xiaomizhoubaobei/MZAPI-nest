@@ -9,9 +9,6 @@ name: njsscan sarif 代码扫描
 on:
   push:
     branches: [ "master" ]
-  pull_request:
-    # 下面的分支必须是上面分支的子集
-    branches: [ "master" ]
   schedule:
     - cron: '30 8 * * 5'
 

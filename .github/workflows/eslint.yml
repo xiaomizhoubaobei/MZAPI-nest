@@ -10,15 +10,6 @@ on:
       - 'code/**/*.jsx'
       - 'code/.eslintrc.js'
       - 'code/package*.json'
-  pull_request:
-    branches: [ "master" ]
-    paths:
-      - 'code/**/*.ts'
-      - 'code/**/*.tsx'
-      - 'code/**/*.js'
-      - 'code/**/*.jsx'
-      - 'code/.eslintrc.js'
-      - 'code/package*.json'
 
 permissions:
   contents: read

@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
 import { HttpModule } from '@nestjs/axios';
-import { BaiduAddressRecognitionService } from './address-recognition.service';
+import { BaiduAddressRecognitionService } from '../service/address-recognition.service';
 import { BaiduAddressRecognitionController } from './address-recognition.controller';
-import { BaiduAuthService } from './uilts/auth.service';
-import { BaiduAuthConfigService } from './uilts/auth.config';
-import { BaiduAuthInterceptor } from './uilts/auth.interceptor';
+import { BaiduAuthService } from '../uilts/auth.service';
+import { BaiduAuthConfigService } from '../uilts/auth.config';
+import { BaiduAuthInterceptor } from '../uilts/auth.interceptor';
 
 /**
  * 百度AI地址识别模块

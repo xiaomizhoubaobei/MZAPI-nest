@@ -3,14 +3,13 @@ import {
   Post,
   Body,
   HttpException,
-  HttpStatus,
-  Get,
-  Query
+  HttpStatus
 } from '@nestjs/common';
 import { IsString, IsNotEmpty } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiResponse as SwaggerApiResponse } from '@nestjs/swagger';
 
-import { BaiduAddressRecognitionService, AddressRecognitionResult } from './address-recognition.service';
+import { BaiduAddressRecognitionService, AddressRecognitionResult } from './service/address-recognition.service';
+import { ApiResponse } from '../common';
 
 /**
  * 单个地址识别请求DTO
@@ -32,15 +31,17 @@ export class SingleAddressRecognitionDto {
 /**
  * 地址识别响应DTO
  */
-export class AddressRecognitionResponseDto {
-  /** 是否成功 */
-  success: boolean;
-  /** 响应消息 */
-  message: string;
-  /** 识别结果 */
-  data?: AddressRecognitionResult | AddressRecognitionResult[];
-  /** 请求时间戳 */
-  timestamp: number;
+export class AddressRecognitionResponseDto extends ApiResponse<AddressRecognitionResult> {
+  @ApiProperty({ description: '识别结果数据' })
+  declare body: {
+    success: boolean;
+    message: string;
+    data?: AddressRecognitionResult;
+    error?: {
+      code: string;
+      details?: any;
+    };
+  };
 }
 
 /**
@@ -57,9 +58,22 @@ export class BaiduAddressRecognitionController {
    * 单个地址识别
    */
   @Post('recognize')
+  @SwaggerApiResponse({
+    status: 200,
+    description: '地址识别成功',
+    type: AddressRecognitionResponseDto,
+  })
+  @SwaggerApiResponse({
+    status: 400,
+    description: '请求参数错误',
+  })
+  @SwaggerApiResponse({
+    status: 500,
+    description: '服务器内部错误',
+  })
   async recognizeAddress(
     @Body() request: SingleAddressRecognitionDto
-  ): Promise<AddressRecognitionResponseDto> {
+  ): Promise<AddressRecognitionResult> {
     try {
       // 验证输入参数
       if (!request.text) {
@@ -88,12 +102,8 @@ export class BaiduAddressRecognitionController {
          apiKey: request.apiKey
        });
 
-      return {
-        success: true,
-        message: '地址识别成功',
-        data: result,
-        timestamp: Date.now()
-      };
+      // 直接返回数据，响应拦截器会自动包装为统一格式
+      return result;
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
@@ -106,43 +116,5 @@ export class BaiduAddressRecognitionController {
     }
   }
 
-  /**
-   * 验证地址文本格式
-   */
-  @Get('validate')
-  async validateAddressText(
-    @Query('text') text: string
-  ): Promise<{
-    success: boolean;
-    message: string;
-    isValid: boolean;
-    timestamp: number;
-  }> {
-    try {
-      if (!text) {
-        throw new HttpException(
-          '地址文本参数不能为空',
-          HttpStatus.BAD_REQUEST
-        );
-      }
 
-      const isValid = this.addressRecognitionService.validateAddressText(text);
-
-      return {
-        success: true,
-        message: isValid ? '地址文本格式有效' : '地址文本格式无效',
-        isValid,
-        timestamp: Date.now()
-      };
-    } catch (error) {
-      if (error instanceof HttpException) {
-        throw error;
-      }
-
-      throw new HttpException(
-        `地址文本验证失败: ${error.message}`,
-        HttpStatus.INTERNAL_SERVER_ERROR
-      );
-    }
-  }
 }

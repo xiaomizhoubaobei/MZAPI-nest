@@ -12,12 +12,12 @@ export {
   AddressRecognitionRequest,
   AddressRecognitionResponse,
   AddressRecognitionResult
-} from './address-recognition.service';
+} from './service/address-recognition.service';
 
 export {
   BaiduAddressRecognitionController,
   SingleAddressRecognitionDto,
   AddressRecognitionResponseDto
-} from './address-recognition.controller';
+} from './controller/address-recognition.controller';
 
-export { BaiduAddressRecognitionModule } from './address-recognition.module';
+export { BaiduAddressRecognitionModule } from './module/address-recognition.module';

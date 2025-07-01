@@ -77,7 +77,7 @@ jobs:
           build-mode: none
           node-version: '22'
           os: macos-latest
-  steps:
+    steps:
     # 检出存储库
     - name: Checkout repository
       uses: actions/checkout@v4

@@ -3,8 +3,10 @@ import {
   Post,
   Body,
   HttpException,
-  HttpStatus
+  HttpStatus,
+  Req
 } from '@nestjs/common';
+import { Request } from 'express';
 import { IsString, IsNotEmpty } from 'class-validator';
 import { ApiProperty, ApiResponse as SwaggerApiResponse } from '@nestjs/swagger';
 
@@ -72,9 +74,13 @@ export class BaiduAddressRecognitionController {
     description: '服务器内部错误',
   })
   async recognizeAddress(
-    @Body() request: SingleAddressRecognitionDto
+    @Body() request: SingleAddressRecognitionDto,
+    @Req() req: Request
   ): Promise<AddressRecognitionResult> {
     try {
+      // 获取请求ID
+      const requestId = req.headers['x-fc-request-id'] as string;
+      
       // 验证输入参数
       if (!request.text) {
         throw new HttpException(
@@ -100,7 +106,7 @@ export class BaiduAddressRecognitionController {
       const result = await this.addressRecognitionService.recognizeAddress({
          text: request.text,
          apiKey: request.apiKey
-       });
+       }, requestId);
 
       // 直接返回数据，响应拦截器会自动包装为统一格式
       return result;

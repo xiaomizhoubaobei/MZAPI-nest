@@ -1,7 +1,8 @@
-import { Injectable, Logger, HttpException, HttpStatus } from '@nestjs/common';
+import { Injectable, HttpException, HttpStatus, Logger } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom, timeout, catchError } from 'rxjs';
 import { throwError } from 'rxjs';
+import { RequestLoggerUtil } from '../../common/utils/request-logger.util';
 
 /**
  * 地址识别请求参数接口
@@ -86,15 +87,18 @@ export class BaiduAddressRecognitionService {
 
   constructor(
     private readonly httpService: HttpService,
+    private readonly requestLogger: RequestLoggerUtil,
   ) {}
 
   /**
    * 识别单个地址文本
    * @param request 地址识别请求参数
+   * @param requestId 请求ID
    * @returns 地址识别结果
    */
   async recognizeAddress(
     request: AddressRecognitionRequest,
+    requestId?: string,
   ): Promise<AddressRecognitionResult> {
     try {
       // 验证输入参数
@@ -174,6 +178,21 @@ export class BaiduAddressRecognitionService {
 
       // 成功响应直接返回数据（百度地址识别API成功时直接返回解析结果，不包装在result字段中）
       this.logger.debug(`地址识别成功: ${JSON.stringify(response.data)}`);
+      
+      // 记录请求日志
+      if (requestId) {
+        await this.requestLogger.saveRequestLog(
+          requestId,
+          requestBody,
+          response.data,
+          'baidu-address-recognition',
+          {
+            method: 'POST',
+            url: url,
+            statusCode: 200
+          }
+        );
+      }
       
       return response.data;
     } catch (error) {

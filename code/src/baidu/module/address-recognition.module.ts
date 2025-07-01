@@ -5,6 +5,7 @@ import { BaiduAddressRecognitionController } from '../controller/address-recogni
 import { BaiduAuthService } from '../uilts/auth.service';
 import { BaiduAuthConfigService } from '../uilts/auth.config';
 import { BaiduAuthInterceptor } from '../uilts/auth.interceptor';
+import { RequestLoggerUtil } from '../../common/utils/request-logger.util';
 
 /**
  * 百度AI地址识别模块
@@ -29,7 +30,8 @@ import { BaiduAuthInterceptor } from '../uilts/auth.interceptor';
     BaiduAddressRecognitionService,
     BaiduAuthService,
     BaiduAuthConfigService,
-    BaiduAuthInterceptor
+    BaiduAuthInterceptor,
+    RequestLoggerUtil
   ],
   exports: [
     BaiduAddressRecognitionService,

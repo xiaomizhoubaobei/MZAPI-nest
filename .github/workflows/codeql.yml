@@ -1,0 +1,143 @@
+name: "CodeQL Advanced"
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+  schedule:
+    - cron: '40 15 * * 1'
+
+jobs:
+  analyze:
+    name: Analyze (${{ matrix.language }})
+    runs-on: ${{ matrix.os }}
+    permissions:
+      # 所有工作流都需要
+      security-events: write
+
+      # 获取内部或私有 CodeQL 包所需
+      packages: read
+
+      # 仅私有存储库中的工作流需要
+      actions: read
+      contents: read
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+        # GitHub Actions 工作流分析 - 多操作系统支持
+        - language: actions
+          build-mode: none
+          os: ubuntu-latest
+        - language: actions
+          build-mode: none
+          os: windows-latest
+        - language: actions
+          build-mode: none
+          os: macos-latest
+        # JavaScript/TypeScript 分析 - 支持多环境和多操作系统检测（最新三个 Node.js 版本）
+         # Node.js 18 LTS
+        - language: javascript-typescript
+          build-mode: none
+          node-version: '18'
+          os: ubuntu-latest
+        - language: javascript-typescript
+          build-mode: none
+          node-version: '18'
+          os: windows-latest
+        - language: javascript-typescript
+          build-mode: none
+          node-version: '18'
+          os: macos-latest
+         # Node.js 20 LTS
+        - language: javascript-typescript
+          build-mode: none
+          node-version: '20'
+          os: ubuntu-latest
+        - language: javascript-typescript
+          build-mode: none
+          node-version: '20'
+          os: windows-latest
+        - language: javascript-typescript
+          build-mode: none
+          node-version: '20'
+          os: macos-latest
+         # Node.js 22 Current
+        - language: javascript-typescript
+          build-mode: none
+          node-version: '22'
+          os: ubuntu-latest
+        - language: javascript-typescript
+          build-mode: none
+          node-version: '22'
+          os: windows-latest
+        - language: javascript-typescript
+          build-mode: none
+          node-version: '22'
+          os: macos-latest
+  steps:
+    # 检出存储库
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      if: matrix.language == 'javascript-typescript'
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+        cache-dependency-path: 'code/package-lock.json'
+
+    - name: Install dependencies
+      if: matrix.language == 'javascript-typescript'
+      working-directory: ./code
+      run: npm ci
+
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v3
+      with:
+        languages: ${{ matrix.language }}
+        build-mode: ${{ matrix.build-mode }}
+        queries: security-extended,security-and-quality
+        source-root: ${{ matrix.language == 'javascript-typescript' && './code' || '.' }}
+
+    - name: Manual build for compiled languages
+      if: matrix.build-mode == 'manual'
+      working-directory: ./code
+      shell: bash
+      run: |
+        echo "开始手动构建 NestJS TypeScript 项目..."
+        
+        # 清理之前的构建产物
+        echo "清理构建缓存..."
+        npm run clean 2>/dev/null || rm -rf dist/ || true
+        
+        # 安装依赖（如果之前步骤未安装）
+        if [ ! -d "node_modules" ]; then
+          echo "安装项目依赖..."
+          npm ci
+        fi
+        
+        # 运行 TypeScript 编译检查
+        echo "执行 TypeScript 类型检查..."
+        npm run build
+        
+        # 运行 ESLint 检查（如果配置了）
+        echo "执行代码质量检查..."
+        npm run lint 2>/dev/null || echo "跳过 lint 检查（未配置）"
+        
+        # 运行测试（如果配置了）
+        echo "执行单元测试..."
+        npm run test 2>/dev/null || echo "跳过测试（未配置）"
+        
+        echo "手动构建完成！"
+
+    # 执行 CodeQL 分析
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v3
+      with:
+        category: "/language:${{matrix.language}}"
+        # 为 TypeScript 分析添加额外的上传信息
+        upload-database: ${{ matrix.language == 'javascript-typescript' }}

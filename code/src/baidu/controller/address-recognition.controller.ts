@@ -8,8 +8,8 @@ import {
 import { IsString, IsNotEmpty } from 'class-validator';
 import { ApiProperty, ApiResponse as SwaggerApiResponse } from '@nestjs/swagger';
 
-import { BaiduAddressRecognitionService, AddressRecognitionResult } from './service/address-recognition.service';
-import { ApiResponse } from '../common';
+import { BaiduAddressRecognitionService, AddressRecognitionResult } from '../service/address-recognition.service';
+import { ApiResponse } from '../../common';
 
 /**
  * 单个地址识别请求DTO

@@ -10,6 +10,7 @@ import { map } from 'rxjs/operators';
 import { Request, Response } from 'express';
 import { ApiResponse } from '../dto/response.dto';
 import * as crypto from 'crypto';
+import { HashSigner } from '../utils/hash-signer';
 
 const ONE_DAY_IN_MILLISECONDS = 86400000;
 const HMAC_SECRET_KEY = '9ff5fcf40eff8af3cfa0a53dc8f4dc7dad8f9af9520c24d4330cfa0bce00c267'; // 请替换为您的实际密钥
@@ -83,41 +84,11 @@ export class ResponseInterceptor<T> implements NestInterceptor<T, ApiResponse<T>
         const sha512Hash = crypto.createHash('sha512').update(responseData).digest('base64');
         response.setHeader('Content-Digest', `sha-512=:${sha512Hash}:`);
 
-        // 计算并设置Content-SHA256头部
-        const sha256Hash = crypto.createHash('sha256').update(responseData).digest('base64');
-        response.setHeader('Content-SHA256', sha256Hash);
-
-        // 计算并设置Content-SHA384头部
-        const sha384Hash = crypto.createHash('sha384').update(responseData).digest('base64');
-        response.setHeader('Content-SHA384', sha384Hash);
-
-        // 计算并设置Content-MD5头部  
-    const md5Hash = crypto.createHash('md5').update(responseData).digest('base64');
-    response.setHeader('Content-MD5', md5Hash);
-    
-    // 计算并设置Content-SHA3-256头部
-    const sha3_256Hash = crypto.createHash('sha3-256').update(responseData).digest('base64');
-    response.setHeader('Content-SHA3-256', sha3_256Hash);
-    
-    // 计算并设置Content-SHA3-384头部
-    const sha3_384Hash = crypto.createHash('sha3-384').update(responseData).digest('base64');
-    response.setHeader('Content-SHA3-384', sha3_384Hash);
-    
-    // 计算并设置Content-SHA3-512头部
-    const sha3_512Hash = crypto.createHash('sha3-512').update(responseData).digest('base64');
-    response.setHeader('Content-SHA3-512', sha3_512Hash);
-
-    // 计算并设置Content-RIPEMD128头部
-    const ripemd128Hash = crypto.createHash('ripemd128').update(responseData).digest('base64');
-    response.setHeader('Content-RIPEMD128', ripemd128Hash);
-
-    // 计算并设置Content-RIPEMD160头部
-    const ripemd160Hash = crypto.createHash('ripemd160').update(responseData).digest('base64');
-    response.setHeader('Content-RIPEMD160', ripemd160Hash);
-
-    // 计算并设置Content-HMAC-SHA256头部
-    const hmacSha256 = crypto.createHmac('sha256', HMAC_SECRET_KEY).update(responseData).digest('base64');
-    response.setHeader('Content-HMAC-SHA256', hmacSha256);
+        // 使用HashSigner生成随机哈希签名并添加到响应头部
+        const randomSignatures = HashSigner.signDataWithRandomHashes(responseData, 6);
+        for (const algorithm in randomSignatures) {
+          response.setHeader(`X-Hash-${algorithm.toUpperCase()}`, randomSignatures[algorithm]);
+        }
 
         //添加requestId
         response.setHeader('X-Request-Id', requestId);
@@ -133,7 +104,7 @@ export class ResponseInterceptor<T> implements NestInterceptor<T, ApiResponse<T>
         }
         
         // 如果返回的数据已经是ApiResponse格式，直接返回
-        if (data && typeof data === 'object' && 'header' in data && 'code' in data && 'body' in data) {
+        if (data && typeof data === 'object' && 'requestId' in data && 'timestamp' in data && 'service' in data && 'code' in data && 'body' in data) {
           return data as ApiResponse<T>;
         }
 

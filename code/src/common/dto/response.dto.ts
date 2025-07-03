@@ -4,48 +4,16 @@ import { ApiProperty } from '@nestjs/swagger';
  * 统一响应格式接口
  */
 export interface IApiResponse<T = any> {
-  /** 响应头部信息 */
-  header: ResponseHeader;
+  /** 请求ID，用于追踪请求 */
+  requestId: string;
+  /** 响应时间戳 */
+  timestamp: number;
+  /** 服务名称 */
+  service: string;
   /** 响应码 */
   code: number;
   /** 响应体 */
   body: ResponseBody<T>;
-}
-
-/**
- * 响应头部信息
- */
-export class ResponseHeader {
-  @ApiProperty({ description: '请求ID，用于追踪请求', example: 'req_1234567890' })
-  requestId: string;
-
-  @ApiProperty({ description: '响应时间戳', example: 1640995200000 })
-  timestamp: number;
-
-  @ApiProperty({ description: '服务名称', example: 'mzapi' })
-  service: string;
-
-  @ApiProperty({ description: 'SHA256哈希值，用于数据完整性验证', example: 'a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3', required: false })
-  sha256?: string;
-
-  @ApiProperty({ description: 'SHA512哈希值，用于数据完整性验证', example: 'b109f3bbbc244eb82441917ed06d618b9008dd09b3befd1b5e07394c706a8bb980b1d7785e5976ec049b46df5f1326af5a2ea6d103fd07c95385ffab0cacbc86', required: false })
-  sha512?: string;
-
-  @ApiProperty({ description: 'MD5哈希值，用于数据完整性验证', example: '5d41402abc4b2a76b9719d911017c592', required: false })
-  md5?: string;
-
-  constructor(requestId?: string, service = 'mzapi', sha256?: string, sha512?: string, md5?: string) {
-    this.requestId = requestId || this.generateRequestId();
-    this.timestamp = Date.now();
-    this.service = service;
-    this.sha256 = sha256;
-    this.sha512 = sha512;
-    this.md5 = md5;
-  }
-
-  private generateRequestId(): string {
-    return `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-  }
 }
 
 /**
@@ -79,8 +47,14 @@ export class ResponseBody<T = any> {
  * 统一API响应类
  */
 export class ApiResponse<T = any> implements IApiResponse<T> {
-  @ApiProperty({ description: '响应头部信息' })
-  header: ResponseHeader;
+  @ApiProperty({ description: '请求ID，用于追踪请求', example: 'req_1234567890' })
+  requestId: string;
+
+  @ApiProperty({ description: '响应时间戳', example: 1640995200000 })
+  timestamp: number;
+
+  @ApiProperty({ description: '服务名称', example: 'mzapi' })
+  service: string;
 
   @ApiProperty({ description: '响应码', example: 200 })
   code: number;
@@ -95,11 +69,11 @@ export class ApiResponse<T = any> implements IApiResponse<T> {
     data?: T,
     error?: { code: string; details?: any },
     requestId?: string,
-    sha256?: string,
-    sha512?: string,
-    md5?: string
+    service = 'mzapi'
   ) {
-    this.header = new ResponseHeader(requestId, 'mzapi', sha256, sha512, md5);
+    this.requestId = requestId || `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    this.timestamp = Date.now();
+    this.service = service;
     this.code = code;
     this.body = new ResponseBody(success, message, data, error);
   }
@@ -107,8 +81,8 @@ export class ApiResponse<T = any> implements IApiResponse<T> {
   /**
    * 创建成功响应
    */
-  static success<T>(data?: T, message = '操作成功', code = 200, requestId?: string, sha256?: string, sha512?: string, md5?: string): ApiResponse<T> {
-    return new ApiResponse(code, true, message, data, undefined, requestId, sha256, sha512, md5);
+  static success<T>(data?: T, message = '操作成功', code = 200, requestId?: string, service = 'mzapi'): ApiResponse<T> {
+    return new ApiResponse(code, true, message, data, undefined, requestId, service);
   }
 
   /**
@@ -120,12 +94,10 @@ export class ApiResponse<T = any> implements IApiResponse<T> {
     errorCode?: string,
     errorDetails?: any,
     requestId?: string,
-    sha256?: string,
-    sha512?: string,
-    md5?: string
+    service = 'mzapi'
   ): ApiResponse<T> {
     const error = errorCode ? { code: errorCode, details: errorDetails } : undefined;
-    return new ApiResponse(code, false, message, undefined, error, requestId, sha256, sha512, md5);
+    return new ApiResponse(code, false, message, undefined, error, requestId, service);
   }
 
   /**
@@ -136,11 +108,9 @@ export class ApiResponse<T = any> implements IApiResponse<T> {
     errorCode: string,
     errorDetails?: any,
     requestId?: string,
-    sha256?: string,
-    sha512?: string,
-    md5?: string
+    service = 'mzapi'
   ): ApiResponse<T> {
-    return new ApiResponse(400, false, message, undefined, { code: errorCode, details: errorDetails }, requestId, sha256, sha512, md5);
+    return new ApiResponse(400, false, message, undefined, { code: errorCode, details: errorDetails }, requestId, service);
   }
 
   /**
@@ -150,31 +120,29 @@ export class ApiResponse<T = any> implements IApiResponse<T> {
     message: string,
     validationDetails?: any,
     requestId?: string,
-    sha256?: string,
-    sha512?: string,
-    md5?: string
+    service = 'mzapi'
   ): ApiResponse<T> {
-    return new ApiResponse(400, false, message, undefined, { code: 'VALIDATION_ERROR', details: validationDetails }, requestId, sha256, sha512, md5);
+    return new ApiResponse(400, false, message, undefined, { code: 'VALIDATION_ERROR', details: validationDetails }, requestId, service);
   }
 
   /**
    * 创建未授权响应
    */
-  static unauthorized<T>(message = '未授权访问', requestId?: string, sha256?: string, sha512?: string, md5?: string): ApiResponse<T> {
-    return new ApiResponse(401, false, message, undefined, { code: 'UNAUTHORIZED' }, requestId, sha256, sha512, md5);
+  static unauthorized<T>(message = '未授权访问', requestId?: string, service = 'mzapi'): ApiResponse<T> {
+    return new ApiResponse(401, false, message, undefined, { code: 'UNAUTHORIZED' }, requestId, service);
   }
 
   /**
    * 创建禁止访问响应
    */
-  static forbidden<T>(message = '禁止访问', requestId?: string, sha256?: string, sha512?: string, md5?: string): ApiResponse<T> {
-    return new ApiResponse(403, false, message, undefined, { code: 'FORBIDDEN' }, requestId, sha256, sha512, md5);
+  static forbidden<T>(message = '禁止访问', requestId?: string, service = 'mzapi'): ApiResponse<T> {
+    return new ApiResponse(403, false, message, undefined, { code: 'FORBIDDEN' }, requestId, service);
   }
 
   /**
    * 创建资源未找到响应
    */
-  static notFound<T>(message = '资源未找到', requestId?: string, sha256?: string, sha512?: string, md5?: string): ApiResponse<T> {
-    return new ApiResponse(404, false, message, undefined, { code: 'NOT_FOUND' }, requestId, sha256, sha512, md5);
+  static notFound<T>(message = '资源未找到', requestId?: string, service = 'mzapi'): ApiResponse<T> {
+    return new ApiResponse(404, false, message, undefined, { code: 'NOT_FOUND' }, requestId, service);
   }
 }

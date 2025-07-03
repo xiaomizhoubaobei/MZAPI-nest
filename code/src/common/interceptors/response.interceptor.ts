@@ -11,32 +11,18 @@ import { Request, Response } from 'express';
 import { ApiResponse } from '../dto/response.dto';
 import * as crypto from 'crypto';
 
-/**
- * Cookie选项接口
- */
-interface CookieOptions {
-  /** Cookie值 */
-  value: string;
-  /** 过期时间（Date对象或UTC字符串） */
-  expires?: Date | string;
-  /** 最大存活时间（秒） */
-  maxAge?: number;
-  /** 域名 */
-  domain?: string;
-  /** 路径 */
-  path?: string;
-  /** 是否仅HTTPS传输 */
-  secure?: boolean;
-  /** 是否禁止JavaScript访问 */
-  httpOnly?: boolean;
-  /** SameSite策略 */
-  sameSite?: 'Strict' | 'Lax' | 'None';
-}
+const ONE_DAY_IN_MILLISECONDS = 86400000;
+const HMAC_SECRET_KEY = '9ff5fcf40eff8af3cfa0a53dc8f4dc7dad8f9af9520c24d4330cfa0bce00c267'; // 请替换为您的实际密钥
 
-/**
- * Cookies设置对象
- */
-type CookiesData = Record<string, string | CookieOptions>;
+const COMMON_COOKIE_OPTIONS = {
+  httpOnly: true,
+  secure: true,
+  sameSite: 'lax' as const,
+  domain: '.mizhoubaobei.top',
+  maxAge: ONE_DAY_IN_MILLISECONDS,
+  path: '/',
+};
+
 
 /**
  * 统一响应格式拦截器
@@ -56,10 +42,8 @@ export class ResponseInterceptor<T> implements NestInterceptor<T, ApiResponse<T>
     const forwardedFor = request.headers['x-forwarded-for'] as string;
     const serverIp = this.extractServerIp(forwardedFor);
     
-    // 处理cookies（包括从eo-client-ip头部获取）
-    const cookies = request.headers.cookie || '';
+    // eo-client-ip头部获取
     const clientIp = request.headers['eo-client-ip'] as string;
-    const parsedCookies = this.parseCookies(cookies, clientIp, requestId); 
 
     return next.handle().pipe(
       map((data) => {
@@ -83,20 +67,70 @@ export class ResponseInterceptor<T> implements NestInterceptor<T, ApiResponse<T>
           'Sec-CH-UA-WoW64'
         ].join(', '));
         
-        // 设置用户IP到响应头部
+        // 设置用户IP到cookies
         if (clientIp) {
           response.setHeader('X-Client-IP', clientIp);
+          response.cookie('clientIp', clientIp, COMMON_COOKIE_OPTIONS);
         }
 
-        // 设置cookies（如果数据中包含cookies信息）
-        if (data && typeof data === 'object' && 'cookies' in data) {
-          this.setCookies(response, data.cookies as any);
+        // 设置服务端IP到cookies
+        if (serverIp) {
+          response.cookie('serverIp', serverIp, COMMON_COOKIE_OPTIONS);
         }
 
         // 计算并设置Content-Digest头部
         const responseData = data ? JSON.stringify(data) : '';
-        const hash = crypto.createHash('sha512').update(responseData).digest('base64');
-        response.setHeader('Content-Digest', `sha-512=:${hash}:`);
+        const sha512Hash = crypto.createHash('sha512').update(responseData).digest('base64');
+        response.setHeader('Content-Digest', `sha-512=:${sha512Hash}:`);
+
+        // 计算并设置Content-SHA256头部
+        const sha256Hash = crypto.createHash('sha256').update(responseData).digest('base64');
+        response.setHeader('Content-SHA256', sha256Hash);
+
+        // 计算并设置Content-SHA384头部
+        const sha384Hash = crypto.createHash('sha384').update(responseData).digest('base64');
+        response.setHeader('Content-SHA384', sha384Hash);
+
+        // 计算并设置Content-MD5头部  
+    const md5Hash = crypto.createHash('md5').update(responseData).digest('base64');
+    response.setHeader('Content-MD5', md5Hash);
+    
+    // 计算并设置Content-SHA3-256头部
+    const sha3_256Hash = crypto.createHash('sha3-256').update(responseData).digest('base64');
+    response.setHeader('Content-SHA3-256', sha3_256Hash);
+    
+    // 计算并设置Content-SHA3-384头部
+    const sha3_384Hash = crypto.createHash('sha3-384').update(responseData).digest('base64');
+    response.setHeader('Content-SHA3-384', sha3_384Hash);
+    
+    // 计算并设置Content-SHA3-512头部
+    const sha3_512Hash = crypto.createHash('sha3-512').update(responseData).digest('base64');
+    response.setHeader('Content-SHA3-512', sha3_512Hash);
+
+    // 计算并设置Content-RIPEMD128头部
+    const ripemd128Hash = crypto.createHash('ripemd128').update(responseData).digest('base64');
+    response.setHeader('Content-RIPEMD128', ripemd128Hash);
+
+    // 计算并设置Content-RIPEMD160头部
+    const ripemd160Hash = crypto.createHash('ripemd160').update(responseData).digest('base64');
+    response.setHeader('Content-RIPEMD160', ripemd160Hash);
+
+    // 计算并设置Content-HMAC-SHA256头部
+    const hmacSha256 = crypto.createHmac('sha256', HMAC_SECRET_KEY).update(responseData).digest('base64');
+    response.setHeader('Content-HMAC-SHA256', hmacSha256);
+
+        //添加requestId
+        response.setHeader('X-Request-Id', requestId);
+
+        //服务端IP到响应头部
+        if (serverIp) {
+          response.setHeader('X-Server-IP', serverIp);
+        }
+        
+        // 客户端IP到响应头部
+        if (clientIp) {
+          response.setHeader('X-Client-IP', clientIp);
+        }
         
         // 如果返回的数据已经是ApiResponse格式，直接返回
         if (data && typeof data === 'object' && 'header' in data && 'code' in data && 'body' in data) {
@@ -115,123 +149,10 @@ export class ResponseInterceptor<T> implements NestInterceptor<T, ApiResponse<T>
           message = this.getErrorMessage(statusCode);
         }
 
-        // 包装为统一响应格式，包含用户IP和cookies信息
-        const responseWithMetadata = {
-          ...data,
-          _metadata: {
-            clientIp,
-            serverIp,
-            cookies: parsedCookies,
-            requestId
-          }
-        };
-        
-        return ApiResponse.success(responseWithMetadata, message, statusCode, requestId);
+        // 包装为统一响应格式
+        return ApiResponse.success(data, message, statusCode, requestId);
       }),
     );
-  }
-
-  /**
-   * 解析cookies字符串为对象
-   */
-  private parseCookies(cookieString: string, eoclientIp?: string, requestId?: string): Record<string, string> {
-    const cookies: Record<string, string> = {};
-    
-    // 解析标准cookies
-    if (cookieString) {
-      cookieString.split(';').forEach(cookie => {
-        const [name, ...rest] = cookie.trim().split('=');
-        if (name && rest.length > 0) {
-          cookies[name] = decodeURIComponent(rest.join('='));
-        }
-      });
-    }
-    
-    // 将eo-client-ip作为特殊cookie处理
-    if (eoclientIp) {
-      cookies['eo-client-ip'] = eoclientIp;
-    }
-    
-    // 将requestId作为特殊cookie处理
-    if (requestId) {
-      cookies['request-id'] = requestId;
-    }
-    
-    return cookies;
-  }
-
-  /**
-   * 设置cookies到响应头部（使用最安全的默认配置）
-   */
-  private setCookies(response: Response, cookies: CookiesData): void {
-    const cookieHeaders: string[] = [];
-    
-    for (const [name, cookieData] of Object.entries(cookies)) {
-      let cookieString = `${name}=`;
-      let options: CookieOptions;
-      
-      if (typeof cookieData === 'string') {
-        // 简单字符串值，使用最安全的默认配置
-        cookieString += encodeURIComponent(cookieData);
-        options = { value: cookieData, ...this.getSecureDefaults() };
-      } else {
-        // 复杂cookie选项，合并用户配置和安全默认值
-        cookieString += encodeURIComponent(cookieData.value);
-        options = { ...this.getSecureDefaults(), ...cookieData };
-      }
-      
-      // 添加各种属性
-      if (options.expires) {
-        const expiresDate = options.expires instanceof Date 
-          ? options.expires 
-          : new Date(options.expires);
-        cookieString += `; Expires=${expiresDate.toUTCString()}`;
-      }
-      
-      if (options.maxAge !== undefined) {
-        cookieString += `; Max-Age=${options.maxAge}`;
-      }
-      
-      if (options.domain) {
-        cookieString += `; Domain=${options.domain}`;
-      }
-      
-      if (options.path) {
-        cookieString += `; Path=${options.path}`;
-      }
-      
-      if (options.secure) {
-        cookieString += '; Secure';
-      }
-      
-      if (options.httpOnly) {
-        cookieString += '; HttpOnly';
-      }
-      
-      if (options.sameSite) {
-        cookieString += `; SameSite=${options.sameSite}`;
-      }
-      
-      cookieHeaders.push(cookieString);
-    }
-    
-    // 设置Set-Cookie头部（支持多个cookie）
-    if (cookieHeaders.length > 0) {
-      response.setHeader('Set-Cookie', cookieHeaders);
-    }
-  }
-
-  /**
-   * 获取最安全的cookie默认配置
-   */
-  private getSecureDefaults(): Partial<CookieOptions> {
-    return {
-      path: '/',              // 限制路径为根路径
-      httpOnly: true,         // 禁止JavaScript访问，防止XSS攻击
-      secure: true,           // 仅HTTPS传输，防止中间人攻击
-      sameSite: 'Strict',     // 最严格的跨站策略，防止CSRF攻击
-      maxAge: 3600,           // 默认1小时过期，减少会话劫持风险
-    };
   }
 
   /**

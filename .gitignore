@@ -2,6 +2,7 @@
 code/dist
 node_modules
 code/node_modules
+html/
 
 # Logs
 logs

@@ -1,6 +1,6 @@
-import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
-import { BaiduAddressRecognitionModule } from './baidu';
+import { Module } from '@nestjs/common'
+import { ConfigModule } from '@nestjs/config'
+import { BaiduAddressRecognitionModule, AccurateOcrModule } from './baidu'
 
 /**
  * 应用根模块
@@ -15,6 +15,8 @@ import { BaiduAddressRecognitionModule } from './baidu';
     }),
     // 百度地址识别模块
     BaiduAddressRecognitionModule,
+    // 百度高精度OCR模块
+    AccurateOcrModule,
   ],
   controllers: [],
   providers: [],

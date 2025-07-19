@@ -4,12 +4,12 @@
  */
 
 // 核心服务
-export { BaiduAuthService, BaiduAuthConfig, BaiduTokenResponse } from './auth.service';
-export { BaiduAuthConfigService, BAIDU_SERVICE_NAMES, BaiduServiceName } from './auth.config';
+export { BaiduAuthConfigService, BAIDU_SERVICE_NAMES, BaiduServiceName } from './auth.config'
+export { BaiduAuthService, BaiduAuthConfig, BaiduTokenResponse } from './auth.service'
 
 // 装饰器和拦截器
-export { BaiduAuth, BaiduToken, BaiduConfig, BAIDU_AUTH_SERVICE_KEY } from './auth.decorator';
-export { BaiduAuthInterceptor } from './auth.interceptor';
+export { BaiduAuth, BaiduToken, BaiduConfig, BAIDU_AUTH_SERVICE_KEY } from './auth.decorator'
+export { BaiduAuthInterceptor } from './auth.interceptor'
 
 // 模块
-export { BaiduAuthModule } from './auth.module';
+export { BaiduAuthModule } from './auth.module'

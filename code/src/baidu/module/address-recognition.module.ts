@@ -1,11 +1,11 @@
-import { Module } from '@nestjs/common';
-import { HttpModule } from '@nestjs/axios';
-import { BaiduAddressRecognitionService } from '../service/address-recognition.service';
-import { BaiduAddressRecognitionController } from '../controller/address-recognition.controller';
-import { BaiduAuthService } from '../uilts/auth.service';
-import { BaiduAuthConfigService } from '../uilts/auth.config';
-import { BaiduAuthInterceptor } from '../uilts/auth.interceptor';
-import { RequestLoggerUtil } from '../../common/utils/request-logger.util';
+import { HttpModule } from '@nestjs/axios'
+import { Module } from '@nestjs/common'
+import { RequestLoggerUtil } from '../../common/utils/request-logger.util'
+import { BaiduAddressRecognitionController } from '../controller/address-recognition.controller'
+import { BaiduAddressRecognitionService } from '../service/address-recognition.service'
+import { BaiduAuthConfigService } from '../uilts/auth.config'
+import { BaiduAuthInterceptor } from '../uilts/auth.interceptor'
+import { BaiduAuthService } from '../uilts/auth.service'
 
 /**
  * 百度AI地址识别模块
@@ -18,25 +18,25 @@ import { RequestLoggerUtil } from '../../common/utils/request-logger.util';
       maxRedirects: 3,
       headers: {
         'User-Agent': 'MZAPI-BaiduAI-AddressRecognition/1.0.0',
-        'Accept': 'application/json',
-        'Content-Type': 'application/json'
-      }
-    })
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+    }),
   ],
   controllers: [
-    BaiduAddressRecognitionController
+    BaiduAddressRecognitionController,
   ],
   providers: [
     BaiduAddressRecognitionService,
     BaiduAuthService,
     BaiduAuthConfigService,
     BaiduAuthInterceptor,
-    RequestLoggerUtil
+    RequestLoggerUtil,
   ],
   exports: [
     BaiduAddressRecognitionService,
     BaiduAuthService,
-    BaiduAuthConfigService
-  ]
+    BaiduAuthConfigService,
+  ],
 })
 export class BaiduAddressRecognitionModule {}

@@ -80,7 +80,7 @@ jobs:
     steps:
     # 检出存储库
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@b4ffde65f46336ab88eb5afa803ae79a14bccdb5 # v4
 
     - name: Setup Node.js
       if: matrix.language == 'javascript-typescript'
@@ -96,7 +96,7 @@ jobs:
       run: npm ci
 
     - name: Initialize CodeQL
-      uses: github/codeql-action/init@v3
+      uses: github/codeql-action/init@afb5467007786435343468b92994793664273299 # v3
       with:
         languages: ${{ matrix.language }}
         build-mode: ${{ matrix.build-mode }}

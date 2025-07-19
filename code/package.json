@@ -31,7 +31,7 @@
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "install:clean": "rm -rf node_modules package-lock.json && npm install",
-    "docs:generate": "compodoc -p tsconfig.json -s"
+    "apidoc": "apidoc -i src/ -o apidoc/"
   },
   "dependencies": {
     "@nestjs/axios": "^3.1.3",
@@ -39,7 +39,6 @@
     "@nestjs/config": "^3.3.0",
     "@nestjs/core": "^10.4.19",
     "@nestjs/platform-express": "^10.4.19",
-    "@nestjs/swagger": "^7.4.2",
     "@types/compression": "^1.8.1",
     "axios": "^1.10.0",
     "class-transformer": "^0.5.1",
@@ -47,11 +46,9 @@
     "compression": "^1.8.0",
     "reflect-metadata": "^0.1.14",
     "rimraf": "^5.0.10",
-    "rxjs": "^7.8.2",
-    "swagger-ui-express": "^5.0.1"
+    "rxjs": "^7.8.2"
   },
   "devDependencies": {
-    "@compodoc/compodoc": "^1.1.26",
     "@nestjs/cli": "^10.4.9",
     "@nestjs/schematics": "^10.2.3",
     "@nestjs/testing": "^10.4.19",
@@ -59,9 +56,9 @@
     "@types/jest": "^29.5.14",
     "@types/node": "^20.19.2",
     "@types/supertest": "^6.0.3",
-    "@types/swagger-ui-express": "^4.1.8",
     "@typescript-eslint/eslint-plugin": "^6.21.0",
     "@typescript-eslint/parser": "^6.21.0",
+    "apidoc": "^1.2.0",
     "eslint": "^8.57.1",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-prettier": "^5.5.1",

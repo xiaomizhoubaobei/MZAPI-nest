@@ -4,20 +4,31 @@
  */
 
 // 鉴权相关
-export * from './uilts';
+export * from './uilts'
 
 // 地址识别服务
 export {
   BaiduAddressRecognitionService,
   AddressRecognitionRequest,
   AddressRecognitionResponse,
-  AddressRecognitionResult
-} from './service/address-recognition.service';
+  AddressRecognitionResult,
+} from './service/address-recognition.service'
 
 export {
   BaiduAddressRecognitionController,
   SingleAddressRecognitionDto,
-  AddressRecognitionResponseDto
-} from './controller/address-recognition.controller';
+  AddressRecognitionResponseDto,
+} from './controller/address-recognition.controller'
 
-export { BaiduAddressRecognitionModule } from './module/address-recognition.module';
+export { BaiduAddressRecognitionModule } from './module/address-recognition.module'
+
+// 高精度OCR服务
+export {
+  BaiduAccurateOcrService,
+  AccurateOcrRequest,
+  AccurateOcrResponse,
+} from './service/accurate-ocr.service'
+
+export { AccurateOcrController } from './controller/accurate-ocr.controller'
+
+export { AccurateOcrModule } from './module/accurate-ocr.module'

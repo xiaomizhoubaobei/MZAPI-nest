@@ -1,27 +1,27 @@
-import { Injectable } from '@nestjs/common';
-import * as fs from 'fs';
-import * as path from 'path';
+import { Injectable } from '@nestjs/common'
+import * as fs from 'fs'
+import * as path from 'path'
 
 /**
  * 请求日志数据接口
  */
 export interface RequestLogData {
   /** 请求ID */
-  requestId: string;
+  requestId: string
   /** 请求体 */
-  requestBody: any;
+  requestBody: any
   /** 响应体 */
-  responseBody: any;
+  responseBody: any
   /** API名称 */
-  apiName: string;
+  apiName: string
   /** 请求时间戳 */
-  timestamp: string;
+  timestamp: string
   /** 请求方法 */
-  method?: string;
+  method?: string
   /** 请求URL */
-  url?: string;
+  url?: string
   /** 状态码 */
-  statusCode?: number;
+  statusCode?: number
 }
 
 /**
@@ -30,7 +30,7 @@ export interface RequestLogData {
  */
 @Injectable()
 export class RequestLoggerUtil {
-  private readonly baseLogPath = '/data/oss';
+  private readonly baseLogPath = '/data/oss'
 
   /**
    * 保存请求日志
@@ -45,7 +45,7 @@ export class RequestLoggerUtil {
     requestBody: any,
     responseBody: any,
     apiName: string,
-    additionalData?: Partial<RequestLogData>
+    additionalData?: Partial<RequestLogData>,
   ): Promise<void> {
     try {
       // 构建日志数据
@@ -55,26 +55,26 @@ export class RequestLoggerUtil {
         responseBody,
         apiName,
         timestamp: new Date().toISOString(),
-        ...additionalData
-      };
+        ...additionalData,
+      }
 
       // 构建文件路径
-      const logDir = path.join(this.baseLogPath, apiName);
-      const logFilePath = path.join(logDir, `${requestId}.json`);
+      const logDir = path.join(this.baseLogPath, apiName)
+      const logFilePath = path.join(logDir, `${requestId}.json`)
 
       // 确保目录存在
-      await this.ensureDirectoryExists(logDir);
+      await this.ensureDirectoryExists(logDir)
 
       // 写入日志文件
       await fs.promises.writeFile(
         logFilePath,
         JSON.stringify(logData, null, 2),
-        'utf8'
-      );
+        'utf8',
+      )
 
-      console.log(`Request log saved: ${logFilePath}`);
+      console.log(`Request log saved: ${logFilePath}`)
     } catch (error) {
-      console.error('Failed to save request log:', error);
+      console.error('Failed to save request log:', error)
       // 不抛出错误，避免影响主业务流程
     }
   }
@@ -85,9 +85,9 @@ export class RequestLoggerUtil {
    */
   private async ensureDirectoryExists(dirPath: string): Promise<void> {
     try {
-      await fs.promises.access(dirPath);
+      await fs.promises.access(dirPath)
     } catch {
-      await fs.promises.mkdir(dirPath, { recursive: true });
+      await fs.promises.mkdir(dirPath, { recursive: true })
     }
   }
 }

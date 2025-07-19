@@ -21,7 +21,7 @@ jobs:
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@b4ffde65f46336ab88eb5afa803ae79a14bccdb5 # v4
         with:
           fetch-depth: 0
       
@@ -32,7 +32,7 @@ jobs:
             - --details=diff
             - --color=always
             - code/src
-          actions-logs: 'true'
+          action-logs: 'true'
       
       - name: Format check summary
         if: failure()

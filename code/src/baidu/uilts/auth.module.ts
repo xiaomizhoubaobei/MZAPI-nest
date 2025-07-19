@@ -1,8 +1,8 @@
-import { Module } from '@nestjs/common';
-import { HttpModule } from '@nestjs/axios';
-import { BaiduAuthService } from './auth.service';
-import { BaiduAuthConfigService } from './auth.config';
-import { BaiduAuthInterceptor } from './auth.interceptor';
+import { HttpModule } from '@nestjs/axios'
+import { Module } from '@nestjs/common'
+import { BaiduAuthConfigService } from './auth.config'
+import { BaiduAuthInterceptor } from './auth.interceptor'
+import { BaiduAuthService } from './auth.service'
 
 /**
  * 百度AI鉴权模块

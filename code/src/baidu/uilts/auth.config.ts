@@ -1,5 +1,5 @@
-import { Injectable } from '@nestjs/common';
-import { BaiduAuthConfig } from './auth.service';
+import { Injectable } from '@nestjs/common'
+import { BaiduAuthConfig } from './auth.service'
 
 /**
  * 百度AI鉴权配置管理类
@@ -7,7 +7,7 @@ import { BaiduAuthConfig } from './auth.service';
  */
 @Injectable()
 export class BaiduAuthConfigService {
-  private configs: Map<string, BaiduAuthConfig> = new Map();
+  private configs: Map<string, BaiduAuthConfig> = new Map()
 
   /**
    * 注册百度AI服务配置
@@ -15,7 +15,7 @@ export class BaiduAuthConfigService {
    * @param config 鉴权配置
    */
   registerConfig(serviceName: string, config: BaiduAuthConfig): void {
-    this.configs.set(serviceName, config);
+    this.configs.set(serviceName, config)
   }
 
   /**
@@ -24,7 +24,7 @@ export class BaiduAuthConfigService {
    * @returns 鉴权配置或undefined
    */
   getConfig(serviceName: string): BaiduAuthConfig | undefined {
-    return this.configs.get(serviceName);
+    return this.configs.get(serviceName)
   }
 
   /**
@@ -32,7 +32,7 @@ export class BaiduAuthConfigService {
    * @returns 服务名称数组
    */
   getRegisteredServices(): string[] {
-    return Array.from(this.configs.keys());
+    return Array.from(this.configs.keys())
   }
 
   /**
@@ -41,14 +41,14 @@ export class BaiduAuthConfigService {
    * @returns 是否成功移除
    */
   removeConfig(serviceName: string): boolean {
-    return this.configs.delete(serviceName);
+    return this.configs.delete(serviceName)
   }
 
   /**
    * 清除所有配置
    */
   clearAllConfigs(): void {
-    this.configs.clear();
+    this.configs.clear()
   }
 
   /**
@@ -62,23 +62,23 @@ export class BaiduAuthConfigService {
     serviceName: string,
     apiKeyEnv: string,
     secretKeyEnv: string,
-    appIdEnv?: string
+    appIdEnv?: string,
   ): void {
-    const apiKey = process.env[apiKeyEnv];
-    const secretKey = process.env[secretKeyEnv];
-    const appId = appIdEnv ? process.env[appIdEnv] : undefined;
+    const apiKey = process.env[apiKeyEnv]
+    const secretKey = process.env[secretKeyEnv]
+    const appId = appIdEnv ? process.env[appIdEnv] : undefined
 
     if (!apiKey || !secretKey) {
       throw new Error(
-        `百度AI配置错误: 环境变量 ${apiKeyEnv} 和 ${secretKeyEnv} 必须设置`
-      );
+        `百度AI配置错误: 环境变量 ${apiKeyEnv} 和 ${secretKeyEnv} 必须设置`,
+      )
     }
 
     this.registerConfig(serviceName, {
       apiKey,
       secretKey,
       appId,
-    });
+    })
   }
 }
 
@@ -106,6 +106,6 @@ export const BAIDU_SERVICE_NAMES = {
   KG: 'kg',
   /** 机器翻译 */
   MT: 'mt',
-} as const;
+} as const
 
-export type BaiduServiceName = typeof BAIDU_SERVICE_NAMES[keyof typeof BAIDU_SERVICE_NAMES];
+export type BaiduServiceName = typeof BAIDU_SERVICE_NAMES[keyof typeof BAIDU_SERVICE_NAMES]

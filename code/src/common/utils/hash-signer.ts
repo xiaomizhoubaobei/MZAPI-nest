@@ -1,4 +1,4 @@
-import * as crypto from 'crypto';
+import * as crypto from 'crypto'
 
 export class HashSigner {
   private static readonly AVAILABLE_HASH_ALGORITHMS: string[] = [
@@ -14,8 +14,8 @@ export class HashSigner {
     'RSA-SHA3-512',
     'RSA-SHA384',
     'RSA-SHA512',
-    'RSA-SHA512/224',
-    'RSA-SHA512/256',
+    'RSA-SHA224',
+    'RSA-SHA256',
     'RSA-SM3',
     'blake2b512',
     'blake2s256',
@@ -51,8 +51,8 @@ export class HashSigner {
     'sm3',
     'sm3WithRSAEncryption',
     'ssl3-md5',
-    'ssl3-sha1'
-  ];
+    'ssl3-sha1',
+  ]
 
   /**
    * 从可用算法中随机选择指定数量的哈希算法。
@@ -60,8 +60,8 @@ export class HashSigner {
    * @returns 随机选择的哈希算法数组。
    */
   private static selectRandomAlgorithms(count: number): string[] {
-    const shuffled = [...HashSigner.AVAILABLE_HASH_ALGORITHMS].sort(() => 0.5 - Math.random());
-    return shuffled.slice(0, count);
+    const shuffled = [...HashSigner.AVAILABLE_HASH_ALGORITHMS].sort(() => 0.5 - Math.random())
+    return shuffled.slice(0, count)
   }
 
   /**
@@ -71,18 +71,18 @@ export class HashSigner {
    * @returns 包含每个算法签名的对象。
    */
   public static signDataWithRandomHashes(data: string, numAlgorithms: number = 4): { [key: string]: string } {
-    const selectedAlgorithms = HashSigner.selectRandomAlgorithms(numAlgorithms);
-    const signatures: { [key: string]: string } = {};
+    const selectedAlgorithms = HashSigner.selectRandomAlgorithms(numAlgorithms)
+    const signatures: { [key: string]: string } = {}
 
     for (const algorithm of selectedAlgorithms) {
       try {
-        const hash = crypto.createHash(algorithm).update(data).digest('base64');
-        signatures[algorithm] = hash;
+        const hash = crypto.createHash(algorithm).update(data).digest('base64')
+        signatures[algorithm] = hash
       } catch (error) {
-        console.warn(`Algorithm ${algorithm} not supported or failed:`, error.message);
-        signatures[algorithm] = `Error: ${error.message}`;
+        console.warn(`Algorithm ${algorithm} not supported or failed:`, error.message)
+        signatures[algorithm] = `Error: ${error.message}`
       }
     }
-    return signatures;
+    return signatures
   }
 }

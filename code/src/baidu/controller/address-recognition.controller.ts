@@ -1,17 +1,10 @@
-import {
-  Controller,
-  Post,
-  Body,
-  HttpException,
-  HttpStatus,
-  Req
-} from '@nestjs/common';
-import { Request } from 'express';
-import { IsString, IsNotEmpty } from 'class-validator';
-import { ApiProperty, ApiResponse as SwaggerApiResponse } from '@nestjs/swagger';
+import { Controller, Post, Body, HttpException, HttpStatus, Req } from '@nestjs/common'
+import { ApiProperty, ApiResponse as SwaggerApiResponse } from '@nestjs/swagger'
+import { IsString, IsNotEmpty } from 'class-validator'
+import { Request } from 'express'
 
-import { BaiduAddressRecognitionService, AddressRecognitionResult } from '../service/address-recognition.service';
-import { ApiResponse } from '../../common';
+import { ApiResponse } from '../../common'
+import { BaiduAddressRecognitionService, AddressRecognitionResult } from '../service/address-recognition.service'
 
 /**
  * 单个地址识别请求DTO
@@ -21,13 +14,13 @@ export class SingleAddressRecognitionDto {
   @ApiProperty({ description: '待识别的地址文本', example: '上海市浦东新区纳贤路701号百度上海研发中心' })
   @IsString({ message: '地址文本必须是字符串' })
   @IsNotEmpty({ message: '地址文本不能为空' })
-  text: string;
+  text: string
 
   /** 百度AI API Key */
   @ApiProperty({ description: '百度AI API Key', example: 'your-api-key-here' })
   @IsString({ message: 'API Key必须是字符串' })
   @IsNotEmpty({ message: 'API Key不能为空' })
-  apiKey: string;
+  apiKey: string
 }
 
 /**
@@ -36,14 +29,14 @@ export class SingleAddressRecognitionDto {
 export class AddressRecognitionResponseDto extends ApiResponse<AddressRecognitionResult> {
   @ApiProperty({ description: '识别结果数据' })
   declare body: {
-    success: boolean;
-    message: string;
-    data?: AddressRecognitionResult;
+    success: boolean
+    message: string
+    data?: AddressRecognitionResult
     error?: {
-      code: string;
-      details?: any;
-    };
-  };
+      code: string
+      details?: any
+    }
+  }
 }
 
 /**
@@ -53,7 +46,7 @@ export class AddressRecognitionResponseDto extends ApiResponse<AddressRecognitio
 @Controller('baidu/address-recognition')
 export class BaiduAddressRecognitionController {
   constructor(
-    private readonly addressRecognitionService: BaiduAddressRecognitionService
+    private readonly addressRecognitionService: BaiduAddressRecognitionService,
   ) {}
 
   /**
@@ -75,52 +68,50 @@ export class BaiduAddressRecognitionController {
   })
   async recognizeAddress(
     @Body() request: SingleAddressRecognitionDto,
-    @Req() req: Request
+    @Req() req: Request,
   ): Promise<AddressRecognitionResult> {
     try {
       // 获取请求ID
-      const requestId = req.headers['x-fc-request-id'] as string;
-      
+      const requestId = req.headers['x-fc-request-id'] as string
+
       // 验证输入参数
       if (!request.text) {
         throw new HttpException(
           '地址文本不能为空',
-          HttpStatus.BAD_REQUEST
-        );
+          HttpStatus.BAD_REQUEST,
+        )
       }
 
       if (!request.apiKey) {
-         throw new HttpException(
-           'API Key不能为空',
-           HttpStatus.BAD_REQUEST
-         );
-       }
+        throw new HttpException(
+          'API Key不能为空',
+          HttpStatus.BAD_REQUEST,
+        )
+      }
 
       if (!this.addressRecognitionService.validateAddressText(request.text)) {
         throw new HttpException(
           '地址文本格式无效，请提供包含中文的有效地址信息',
-          HttpStatus.BAD_REQUEST
-        );
+          HttpStatus.BAD_REQUEST,
+        )
       }
 
       const result = await this.addressRecognitionService.recognizeAddress({
-         text: request.text,
-         apiKey: request.apiKey
-       }, requestId);
+        text: request.text,
+        apiKey: request.apiKey,
+      }, requestId)
 
       // 直接返回数据，响应拦截器会自动包装为统一格式
-      return result;
+      return result
     } catch (error) {
       if (error instanceof HttpException) {
-        throw error;
+        throw error
       }
 
       throw new HttpException(
         `地址识别失败: ${error.message}`,
-        HttpStatus.INTERNAL_SERVER_ERROR
-      );
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      )
     }
   }
-
-
 }

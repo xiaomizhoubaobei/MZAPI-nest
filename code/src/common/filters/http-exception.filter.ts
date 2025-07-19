@@ -1,13 +1,6 @@
-import {
-  ExceptionFilter,
-  Catch,
-  ArgumentsHost,
-  HttpException,
-  HttpStatus,
-  Logger,
-} from '@nestjs/common';
-import { Request, Response } from 'express';
-import { ApiResponse } from '../dto/response.dto';
+import { ExceptionFilter, Catch, ArgumentsHost, HttpException, HttpStatus, Logger } from '@nestjs/common'
+import { Request, Response } from 'express'
+import { ApiResponse } from '../dto/response.dto'
 
 /**
  * HTTP异常过滤器
@@ -15,44 +8,42 @@ import { ApiResponse } from '../dto/response.dto';
  */
 @Catch(HttpException)
 export class HttpExceptionFilter implements ExceptionFilter {
-  private readonly logger = new Logger(HttpExceptionFilter.name);
+  private readonly logger = new Logger(HttpExceptionFilter.name)
 
   catch(exception: HttpException, host: ArgumentsHost) {
-    const ctx = host.switchToHttp();
-    const response = ctx.getResponse<Response>();
-    const request = ctx.getRequest<Request>();
-    const status = exception.getStatus();
-    
+    const ctx = host.switchToHttp()
+    const response = ctx.getResponse<Response>()
+    const request = ctx.getRequest<Request>()
+    const status = exception.getStatus()
+
     // 获取请求ID
-    const requestId = request.headers['x-request-id'] as string || 
-                     request.headers['request-id'] as string;
+    const requestId = request.headers['x-request-id'] as string ||
+      request.headers['request-id'] as string
 
     // 获取异常响应内容
-    const exceptionResponse = exception.getResponse();
-    let message = exception.message;
-    let errorCode = 'HTTP_EXCEPTION';
-    let errorDetails: any;
+    const exceptionResponse = exception.getResponse()
+    let message = exception.message
+    let errorCode = 'HTTP_EXCEPTION'
+    let errorDetails: any
 
     // 处理不同类型的异常响应
     if (typeof exceptionResponse === 'object') {
-      const responseObj = exceptionResponse as any;
-      
+      const responseObj = exceptionResponse as any
+
       // 处理验证错误
       if (responseObj.message && Array.isArray(responseObj.message)) {
-        message = '请求参数验证失败';
-        errorCode = 'VALIDATION_ERROR';
+        message = '请求参数验证失败'
+        errorCode = 'VALIDATION_ERROR'
         errorDetails = {
           validationErrors: responseObj.message,
           error: responseObj.error,
-        };
+        }
       } else if (responseObj.message) {
-        message = Array.isArray(responseObj.message) 
-          ? responseObj.message.join(', ') 
-          : responseObj.message;
+        message = Array.isArray(responseObj.message) ? responseObj.message.join(', ') : responseObj.message
       }
-      
+
       if (responseObj.error) {
-        errorCode = responseObj.error;
+        errorCode = responseObj.error
       }
     }
 
@@ -66,18 +57,18 @@ export class HttpExceptionFilter implements ExceptionFilter {
         userAgent: request.headers['user-agent'],
         ip: request.ip,
         exception: exception.stack,
-      }
-    );
+      },
+    )
 
     // 处理405 Method Not Allowed错误，添加Allow头部
     if (status === HttpStatus.METHOD_NOT_ALLOWED) {
-      response.setHeader('Allow', 'GET, PUT, POST');
+      response.setHeader('Allow', 'GET, PUT, POST')
     }
 
     // 创建统一错误响应
-    const errorResponse = this.createErrorResponse(status, message, errorCode, errorDetails, requestId);
+    const errorResponse = this.createErrorResponse(status, message, errorCode, errorDetails, requestId)
 
-    response.status(status).json(errorResponse);
+    response.status(status).json(errorResponse)
   }
 
   /**
@@ -88,21 +79,21 @@ export class HttpExceptionFilter implements ExceptionFilter {
     message: string,
     errorCode: string,
     errorDetails?: any,
-    requestId?: string
+    requestId?: string,
   ): ApiResponse<null> {
     switch (status) {
       case HttpStatus.BAD_REQUEST:
-        return ApiResponse.businessError(message, errorCode, errorDetails, requestId);
+        return ApiResponse.businessError(message, errorCode, errorDetails, requestId)
       case HttpStatus.UNAUTHORIZED:
-        return ApiResponse.unauthorized(message, requestId);
+        return ApiResponse.unauthorized(message, requestId)
       case HttpStatus.FORBIDDEN:
-        return ApiResponse.forbidden(message, requestId);
+        return ApiResponse.forbidden(message, requestId)
       case HttpStatus.NOT_FOUND:
-        return ApiResponse.notFound(message, requestId);
+        return ApiResponse.notFound(message, requestId)
       case HttpStatus.METHOD_NOT_ALLOWED:
-        return ApiResponse.error('方法不被允许', status, 'METHOD_NOT_ALLOWED', errorDetails, requestId);
+        return ApiResponse.error('方法不被允许', status, 'METHOD_NOT_ALLOWED', errorDetails, requestId)
       default:
-        return ApiResponse.error(message, status, errorCode, errorDetails, requestId);
+        return ApiResponse.error(message, status, errorCode, errorDetails, requestId)
     }
   }
 }

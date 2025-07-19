@@ -1,17 +1,17 @@
-import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
-import { HttpService } from '@nestjs/axios';
-import { firstValueFrom } from 'rxjs';
+import { HttpService } from '@nestjs/axios'
+import { Injectable, HttpException, HttpStatus } from '@nestjs/common'
+import { firstValueFrom } from 'rxjs'
 
 /**
  * 百度AI鉴权配置接口
  */
 export interface BaiduAuthConfig {
   /** 应用的API Key */
-  apiKey: string;
+  apiKey: string
   /** 应用的Secret Key */
-  secretKey: string;
+  secretKey: string
   /** 应用的App ID */
-  appId?: string;
+  appId?: string
 }
 
 /**
@@ -19,19 +19,19 @@ export interface BaiduAuthConfig {
  */
 export interface BaiduTokenResponse {
   /** 访问令牌 */
-  access_token: string;
+  access_token: string
   /** 令牌类型，固定为Bearer */
-  token_type: string;
+  token_type: string
   /** 令牌有效期，单位秒 */
-  expires_in: number;
+  expires_in: number
   /** 权限范围 */
-  scope: string;
+  scope: string
   /** 刷新令牌 */
-  refresh_token?: string;
+  refresh_token?: string
   /** 会话密钥 */
-  session_key?: string;
+  session_key?: string
   /** 会话密钥有效期 */
-  session_secret?: string;
+  session_secret?: string
 }
 
 /**
@@ -40,8 +40,8 @@ export interface BaiduTokenResponse {
  */
 @Injectable()
 export class BaiduAuthService {
-  private readonly TOKEN_URL = 'https://aip.baidubce.com/oauth/2.0/token';
-  private tokenCache: Map<string, { token: string; expiresAt: number }> = new Map();
+  private readonly TOKEN_URL = 'https://aip.baidubce.com/oauth/2.0/token'
+  private tokenCache: Map<string, { token: string, expiresAt: number }> = new Map()
 
   constructor(private readonly httpService: HttpService) {}
 
@@ -52,12 +52,12 @@ export class BaiduAuthService {
    * @returns Promise<string> 访问令牌
    */
   async getAccessToken(config: BaiduAuthConfig, forceRefresh = false): Promise<string> {
-    const cacheKey = `${config.apiKey}_${config.secretKey}`;
-    const cached = this.tokenCache.get(cacheKey);
+    const cacheKey = `${config.apiKey}_${config.secretKey}`
+    const cached = this.tokenCache.get(cacheKey)
 
     // 检查缓存是否有效（提前5分钟过期）
     if (!forceRefresh && cached && cached.expiresAt > Date.now() + 5 * 60 * 1000) {
-      return cached.token;
+      return cached.token
     }
 
     try {
@@ -73,41 +73,41 @@ export class BaiduAuthService {
             },
             headers: {
               'Content-Type': 'application/json',
-              'Accept': 'application/json',
+              Accept: 'application/json',
             },
-          }
-        )
-      );
+          },
+        ),
+      )
 
-      const tokenData = response.data;
-      
+      const tokenData = response.data
+
       if (!tokenData.access_token) {
         throw new HttpException(
           '获取百度AI访问令牌失败：响应中缺少access_token',
-          HttpStatus.UNAUTHORIZED
-        );
+          HttpStatus.UNAUTHORIZED,
+        )
       }
 
       // 缓存令牌
-      const expiresAt = Date.now() + (tokenData.expires_in * 1000);
+      const expiresAt = Date.now() + (tokenData.expires_in * 1000)
       this.tokenCache.set(cacheKey, {
         token: tokenData.access_token,
         expiresAt,
-      });
+      })
 
-      return tokenData.access_token;
+      return tokenData.access_token
     } catch (error) {
       if (error.response) {
-        const errorData = error.response.data;
+        const errorData = error.response.data
         throw new HttpException(
           `百度AI鉴权失败: ${errorData.error_description || errorData.error || '未知错误'}`,
-          HttpStatus.UNAUTHORIZED
-        );
+          HttpStatus.UNAUTHORIZED,
+        )
       }
       throw new HttpException(
         `百度AI鉴权请求失败: ${error.message}`,
-        HttpStatus.INTERNAL_SERVER_ERROR
-      );
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      )
     }
   }
 }

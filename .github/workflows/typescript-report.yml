@@ -26,7 +26,7 @@ jobs:
       
       - name: 获取变更的 TypeScript 文件
         id: changed-typescript-files
-        uses: tj-actions/changed-files@v44
+        uses: tj-actions/changed-files@v46
         with:
           base_sha: ${{ github.event.pull_request.base.sha }}
           files: |

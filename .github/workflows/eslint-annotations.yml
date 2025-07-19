@@ -24,10 +24,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: 检出代码
-        uses: actions/checkout@b4ffde65f46336ab88eb5afa803ae79a14bccdb5 # v4
+        uses: actions/checkout@v4
       
       - name: 设置 Node.js
-        uses: actions/setup-node@60edb5dd545a775178f528a6a456c8e3559c038d # v4
+        uses: actions/setup-node@v4
         with:
           node-version: '18'
           cache: 'npm'

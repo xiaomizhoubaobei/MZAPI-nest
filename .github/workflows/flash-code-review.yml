@@ -1,0 +1,62 @@
+name: Flash Code Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: [master]
+    paths:
+      - 'code/**/*.ts'
+      - 'code/**/*.tsx'
+      - 'code/**/*.js'
+      - 'code/**/*.jsx'
+      - 'code/package*.json'
+      - 'code/tsconfig*.json'
+
+jobs:
+  flash_review:
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    name: AI-Powered Deep Code Review
+    permissions:
+      contents: read
+      pull-requests: write
+      checks: write
+      issues: write
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: 'code/package-lock.json'
+      
+      - name: Install dependencies
+        run: |
+          cd code
+          npm ci
+      
+      - name: TypeScript Deep Code Review
+        uses: DanielSuhett/flash@v0.0.9
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          gemini-api-key: ${{ secrets.GEMINI_API_KEY }}
+          gemini-model: 'gemini-2.0-flash'
+          llm-max-tokens: 8000
+          output-language: 'zh'
+          auto-approve: 'false'
+          index-cache-enabled: 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Review Summary
+        if: always()
+        run: |
+          echo "🤖 Flash 代码审查已完成！"
+          echo "📊 审查结果已发布到 PR。"
+          echo "🔍 请在 PR 评论中查看详细的 AI 分析。"

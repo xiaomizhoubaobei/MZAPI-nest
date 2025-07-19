@@ -1,0 +1,53 @@
+name: ChatGPT Code Review
+
+on:
+  pull_request:
+    branches: [master]
+    paths:
+      - 'code/**/*.ts'
+      - 'code/**/*.js'
+      - 'code/**/*.tsx'
+      - 'code/**/*.jsx'
+      - 'code/package*.json'
+      - 'code/tsconfig*.json'
+      - 'code/.eslintrc*'
+
+jobs:
+  chatgpt_review:
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    name: ChatGPT Code Review
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: 'code/package-lock.json'
+      
+      - name: Install dependencies
+        run: |
+          cd code
+          npm ci
+      
+      - name: ChatGPT Code Review
+        uses: mvtavares/chatgpt-ts-action@v1
+        with:
+          mode: 'pr'
+          include_patterns: 'code/**/*.ts,code/**/*.js,code/**/*.tsx,code/**/*.jsx'
+          exclude_patterns: 'code/node_modules/**,code/dist/**,code/build/**'
+          max_files: 20
+          max_lines: 500
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}

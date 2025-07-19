@@ -25,10 +25,10 @@ jobs:
     name: njsscan 代码扫描
     steps:
     - name: 检出代码
-      uses: actions/checkout@b4ffde65f46336ab88eb5afa803ae79a14bccdb5 # v4
+      uses: actions/checkout@v4
     - name: nodejsscan 扫描
       id: njsscan
-      uses: ajinabraham/njsscan-action@7237412fdd36af517e2745077cedbf9d6900d711
+      uses: ajinabraham/njsscan-action@v3.0.0
       with:
         args: '. --sarif --output results.sarif || true'
     - name: 上传 njsscan 报告

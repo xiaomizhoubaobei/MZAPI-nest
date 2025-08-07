@@ -1,0 +1,49 @@
+# API 项目标签配置
+# 格式: 标签名: 文件路径匹配规则
+
+# API 控制器变更
+controllers:
+- code/src/**/controllers/**/*
+- code/src/**/*.controller.ts
+
+# 服务层变更
+services:
+- code/src/**/services/**/*
+- code/src/**/*.service.ts
+
+# 数据模型变更
+models:
+- code/src/**/models/**/*
+- code/src/**/dto/**/*
+- code/src/**/entities/**/*
+- code/src/**/*.model.ts
+- code/src/**/*.entity.ts
+- code/src/**/*.dto.ts
+
+# 中间件变更
+middleware:
+- code/src/**/middleware/**/*
+- code/src/**/*.middleware.ts
+- code/src/**/*.interceptor.ts
+- code/src/**/*.filter.ts
+- code/src/**/*.guard.ts
+
+# 测试相关变更
+tests:
+- '**/*.test.ts'
+- '**/*.spec.ts'
+- code/src/**/__tests__/**/*
+- code/test/**/*
+
+# 配置文件变更
+configuration:
+- code/src/**/config/**/*
+- '**/*.yml'
+- '**/*.yaml'
+- '**/*.json'
+- '**/*.config.ts'
+- '**/*.config.js'
+
+# CI/CD 相关变更
+ci:
+- .github/workflows/**/*

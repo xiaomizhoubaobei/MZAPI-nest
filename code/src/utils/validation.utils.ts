@@ -43,7 +43,7 @@ export class AliyunValidationUtils {
         ].filter(Boolean);
 
         if (missingParams.length > 0) {
-            throw new Error(`缺少必填参数: ${missingParams.join(', ')}`);
+            throw new BadRequestException(`缺少必填参数: ${missingParams.join(', ')}`);
         }
     }
 

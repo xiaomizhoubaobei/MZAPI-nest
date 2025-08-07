@@ -7,7 +7,8 @@ import {
     NoCacheInterceptor,
     ContentDigestInterceptor,
     ContentLanguageInterceptor,
-    ServerTimingInterceptor
+    ServerTimingInterceptor,
+    GzipInterceptor
 } from './interceptors';
 
 @Module({
@@ -36,6 +37,10 @@ import {
         {
             provide: APP_INTERCEPTOR,
             useClass: ServerTimingInterceptor,
+        },
+        {
+            provide: APP_INTERCEPTOR,
+            useClass: GzipInterceptor,
         },
     ],
 })

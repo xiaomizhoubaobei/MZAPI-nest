@@ -1,0 +1,19 @@
+# 此工作流会根据PR中修改的文件路径自动添加标签
+#
+# 使用此工作流前，需要先配置.GitHub/labeler.yml文件
+# 更多信息请参考: https://github.com/actions/labeler
+
+name: 自动标签
+on: [pull_request_target]  # 监听PR目标事件
+
+jobs:
+  label:
+    runs-on: ubuntu-latest  # 在最新版Ubuntu上运行
+    permissions:
+      contents: read  # 读取仓库内容权限
+      pull-requests: write  # 写入PR权限
+
+    steps:
+    - uses: actions/labeler@v4  # 使用labeler动作v4版本
+      with:
+        repo-token: "${{ secrets.TOKEN }}"  # 使用仓库token进行认证

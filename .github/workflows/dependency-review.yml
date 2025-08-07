@@ -1,0 +1,21 @@
+name: '依赖项审查'
+
+on:
+  # 当有pull_request事件发生时触发
+  pull_request:
+    branches: [ "master" ]  # 仅对master分支的PR触发
+
+permissions:
+  contents: read  # 读取仓库内容权限
+  pull-requests: write  # 写入PR权限
+
+jobs:
+  dependency-review:
+    runs-on: ubuntu-latest  # 在最新版Ubuntu上运行
+    steps:
+      - name: '检出代码库'
+        uses: actions/checkout@v4
+      - name: '依赖项审查'
+        uses: actions/dependency-review-action@v4
+        with:
+          comment-summary-in-pr: always  # 总是在PR中显示审查摘要

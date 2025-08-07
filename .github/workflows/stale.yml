@@ -1,0 +1,25 @@
+# 此工作流会对长时间无活动的issue和PR发出警告并关闭
+#
+# 您可以通过修改此文件来调整行为
+# 更多信息请参考: https://github.com/actions/stale
+name: 标记过期的issue和pull request
+
+on:
+  schedule:
+  - cron: '44 0 * * *'  # 每天UTC时间0:44运行
+
+jobs:
+  stale:
+    runs-on: ubuntu-latest  # 在最新版Ubuntu上运行
+    permissions:
+      issues: write  # 写入issue权限
+      pull-requests: write  # 写入PR权限
+
+    steps:
+    - uses: actions/stale@v5  # 使用stale动作v5版本
+      with:
+        repo-token: ${{ secrets.TOKEN }}  # 使用仓库token进行认证
+        stale-issue-message: '该issue长时间无活动'  # issue过期提醒消息
+        stale-pr-message: '该PR长时间无活动'  # PR过期提醒消息
+        stale-issue-label: 'no-issue-activity'  # 标记过期issue的标签
+        stale-pr-label: 'no-pr-activity'  # 标记过期PR的标签

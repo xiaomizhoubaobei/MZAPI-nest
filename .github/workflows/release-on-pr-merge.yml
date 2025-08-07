@@ -1,0 +1,53 @@
+name: 合并PR到主分支时创建发布
+
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - master
+
+jobs:
+  create_release:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 获取PR信息
+        id: get_pr_info
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const prNumber = context.payload.pull_request.number;
+            const pr = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: prNumber
+            });
+            return pr.data;
+
+      - name: 安装jq工具
+        run: sudo apt-get install -y jq
+
+      - name: 从package.json获取版本号
+        id: get_version
+        run: |
+          version=$(jq -r '.version' code/package.json)
+          echo "version=${version}" >> $GITHUB_OUTPUT
+
+      - name: 创建发布
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.TOKEN }}
+        with:
+          tag_name: "V${{ steps.get_version.outputs.version }}"
+          release_name: "V${{ steps.get_version.outputs.version }}"
+          body: |
+            **PR信息:**
+            - **标题**: ${{ steps.get_pr_info.outputs.result.title }}
+            - **描述**: ${{ steps.get_pr_info.outputs.result.body }}
+            - **作者**: ${{ steps.get_pr_info.outputs.result.user.login }}
+          draft: false
+          prerelease: false
